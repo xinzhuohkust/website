@@ -1,0 +1,25 @@
+---
+comments: false
+---
+
+
+
+
+```{=html}
+<head>
+    <link rel="stylesheet" type="text/css" href="scss/love_count_styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Parisienne&display=swap" rel="stylesheet"> 
+</head>
+<body>
+    <div class="background">
+        <img src="png/xinzhuo_xiaoyun.jpg" alt="Background Image">
+    </div>
+    <div class="container">
+        <p>We have been together for</p>
+        <p id="daysPassed">...</p>
+        <p>days</p>
+    </div>
+    <script src="scss/love_count.js"></script>
+</body>
+
+```

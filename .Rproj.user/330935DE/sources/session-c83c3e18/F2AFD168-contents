@@ -1,0 +1,96 @@
+project:
+  type: website
+  output-dir: docs
+
+execute:
+  freeze: auto
+
+preview:
+  port: 5555
+  browser: true
+  watch-inputs: true
+  navigate: true
+
+bibliography: bib/references.bib
+csl: bib/chicago-author-date.csl
+
+website:
+  #back-to-top-navigation: true
+  cookie-consent: true
+  title: "Xinzhuo Huang"
+  google-analytics:
+    tracking-id: "G-7HHBQV7LX3"
+  favicon: favicon.png
+  site-url: https://xinzhuo.work
+  description: "Xinzhuo's Personal Website"
+  twitter-card: true
+  open-graph: true
+  navbar:
+    logo: icon_sun.png
+    title: false
+    right:
+      - text: CV
+        href: cv/
+      - text: BLOG
+        href: blog/index.html
+      - text: DATA
+        href: data/index.html
+      - text: PROJECT
+        href: project/index.html
+      - icon: rss
+        href: blog/index.xml
+      - icon: github
+        menu:
+          - text: Source Code
+            url:  https://github.com/xinzhuohkust/xinzhuo
+          - text: Report a Bug
+            url:  https://github.com/xinzhuohkust/xinzhuo/issues
+  page-footer:
+    border: false
+    center: "Powered by [Quarto](https://quarto.org) | © 2023 [Xinzhuo Huang](/cv/)"
+
+format:
+  html:
+    theme:
+      light: [flatly, scss/light.scss]
+      dark: [darkly, scss/dark.scss]
+    css: scss/styles.css
+    code-link: true
+    author:
+      - name: Xinzhuo Huang
+        orcid: 0009-0007-6448-5114
+        email: xhuangcb@connect.ust.hk
+        affiliations:
+          - name: HKUST SOSC
+    link-external-icon: false
+    link-external-newwindow: true
+    smooth-scroll: true
+    highlight-style: gruvbox
+    df-print: kable
+    code-fold: true
+    code-block-bg: "#f5f5f5"
+    code-block-border-left: "#E0E0E0"
+    toc: true
+    toc-depth: 3
+    toc-location: right
+    link-citations: yes
+    comments:
+      giscus:
+        repo: xinzhuohkust/comments
+        theme: light
+      hypothesis:
+        theme: clean
+
+knitr:
+  opts_chunk:
+    tidy: true
+    warning: false
+    message: false
+    error: false
+
+code-annotations: hover
+
+#filters:
+#  - nutshell
+
+editor: visual

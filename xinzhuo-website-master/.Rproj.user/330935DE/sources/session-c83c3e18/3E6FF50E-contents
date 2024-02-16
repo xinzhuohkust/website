@@ -1,0 +1,240 @@
+---
+title: "Data on law enforcement by Chinese police"
+date: "last-modified"
+author:
+  - name: Xinzhuo Huang
+    orcid: 0009-0007-6448-5114
+    email: xhuangcb@connect.ust.hk
+    affiliations:
+      - name: HKUST SOSC
+categories: [Web Scraping, Administrative Penalties]
+description: "12 million administrative punishment \ndocuments (2018 ~ 2023)"
+code-fold: true
+feed: true
+cap-location: bottom
+reference-location: margin
+citation-location: margin
+format:
+  html:
+    grid:
+      margin-width: 350px
+  #pdf: default
+citations-hover: true
+toc: false
+bibliography: references.bib
+comments: false
+citation: 
+    author: Huang Xinzhuo
+execute:
+    warning: false
+    message: false
+    error: false
+---
+
+::: {.callout-warning title="Data Compliance"}
+All of the data is publicly available and any sensitive personal inforamtion has been removed. This data is solely for my research purposes.
+:::
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+```
+## Overview {.unnumbered .unlisted}
+
+::: {.g-col-12 .g-col-md-4 style="text-align: justify;"}
+Elite challenges and mass uprisings pose significant threats to authoritarian regimes [@svolik2012politics]. State coercion has been crucial in addressing the uncertainty induced by these issues [@caiStateSocialProtests2022a]. This dataset concentrates on the potent instruments of state coercion in China, specifically administrative punishment, to explore various topics related to Chinese politics [@sternAmplifyingSilenceUncertainty2012].
+
+The author <img src="web_crawler.png" align="left" width="150" height="170"/> has scraped over 12 million data points from various apps and websites in China. Using `httr2` and `V8`, data collection can be made easier with functional programming, allowing for seamless multithreading and efficient error handling. For more technical details about the web scraper, please refer to my [blog](https://xinzhuo.work/blog/).
+:::
+
+```{r}
+#| echo: false
+require("pacman")
+p_load(modelsummary, tidyverse, purrr, furrr, stringi, tokenizers, tidytext, progress, jsonlite, sf, leaflet, DT, hchinamap, reactable, tippy, htmltools)
+```
+
+## Population Data distribution
+
+```{r}
+#| echo: false
+hchinamap(
+  name = c("吉林", "辽宁", "湖南", "重庆", "广东", "江苏", "广西", "云南", "湖北", "山东", "浙江", "河北", "青海", "北京", "上海", "陕西", "宁夏", "内蒙古", "四川"),
+  value = c(237537, 376848, 1174600, 82265, 1995643, 1023432, 894542, 733935, 586745, 865689, 1876714, 859280, 61968, 385531, 85425, 223478, 123043, 142254, 779544),
+  width = "100%",
+  height = "788px",
+  title = "Distribution of the number of administrative penalty documents",
+  region = "China",
+  minColor = "#f1eef6",
+  maxColor = "#980043",
+  itermName = "Count",
+  hoverColor = "#f6acf5",
+  theme = "gridlight"
+)
+```
+
+<br> <br>
+
+## Sample Data
+
+```{r}
+#| echo: false
+render_reactable_cell_with_tippy <- function(text, tooltip) {
+    div(
+      style = "max-width: 800px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+        tippy(text = text, tooltip = tooltip)
+    )
+}
+
+data2 <- read_rds("E:\\OneDrive - HKUST Connect\\zhejiang_petition\\responsiveness_cleaning\\抗争1000.Rds") %>% 
+  select(contents) %>% 
+  separate(col = contents, sep = "#", into = c(as.character(1:10))) %>% 
+  filter(str_detect(`10`, "上访")) %>% 
+  select(
+      Agency = `7`,
+      Date = `9`,
+      Fact = `10`
+  ) %>%
+  mutate(across(everything(), \(x) str_trim(x) |> str_squish())) %>% 
+  arrange(desc(Date)) %>% 
+  select(-Agency) %>% 
+  mutate(Fact = str_remove_all(Fact, "主要违法事实：")) %>% 
+  sample_n(20)
+
+data2 <- read_rds("E:\\OneDrive - HKUST Connect\\zhejiang_petition\\responsiveness_cleaning\\抗争翻译.Rds") %>% 
+    select(1:2) %>% 
+    mutate(
+        Facts = str_trim(Fact) |> str_replace_all("浙江|温州|象山|杭州", "***"), 
+        Date = ymd(Date),
+        Fact = NULL
+    ) %>% 
+    arrange(desc(Date))
+
+table2 <- reactable(data2,
+    searchable = TRUE,
+    theme = reactableTheme(
+        headerStyle = list(
+            "&:hover[aria-sort]" = list(background = "hsl(0, 0%, 96%)"),
+            "&[aria-sort='ascending'], &[aria-sort='descending']" = list(background = "hsl(0, 0%, 96%)"),
+            borderColor = "#555"
+        )
+    ),
+    columns = list(
+        `Facts` = colDef(
+            html = TRUE,
+            cell = function(value, index, name) {
+                render_reactable_cell_with_tippy(text = value, tooltip = value)
+            }
+        )
+    )
+)
+
+table2 
+```
+
+<br> <br>
+
+## Examples of Data Application: Policing at Protests
+
+Policing protest is a key topic in the study of social movements [@elliott2022softer]. Based on these 12 million policing documents, the author has identified about 100,000 instances of social protests happening in China.
+
+Utilizing the geocoding R package developed by the author, we have obtained the geographic coordinates of where the protests take place.
+
+```{r}
+#| echo: false
+#| cap-location: bottom
+#| fig-cap: "Where did social protests occur in Jilin Province, China?"
+jilin <- sf::read_sf("https://geo.datav.aliyun.com/areas_v3/bound/geojson?code=220000_full")
+
+jilin_pre <- readRDS("E:/OneDrive - HKUST Connect/writing_sample/presentation/jilin_pre.rds")
+
+jilin <- jilin_pre %>%
+    group_by(city) %>%
+    summarize(total = sum(punishment_num)) %>%
+    right_join(jilin, join_by("city" == "name"))
+
+jilin_point <- jilin_pre %>%
+    mutate(
+        longitude = map_dbl(BD, ~ pluck(., 1)),
+        latitude = map_dbl(BD, ~ pluck(., 2))
+    )
+
+petition_office <- tibble(
+    contents = "国家信访局",
+    longitude = 116.35749472151432,
+    latitude = 39.91937866591789
+)
+
+icons <- awesomeIcons(
+    icon = "ios-close",
+    iconColor = "black",
+    library = "ion",
+    markerColor = "red"
+)
+
+pal <- colorNumeric(palette = "Reds", domain = jilin$total)
+
+leaflet() %>%
+    addProviderTiles(
+        providers$CartoDB.Positron,
+        options = tileOptions(tileSize = 256, minZoom = 5, maxZoom = 30)
+    ) %>%
+    addPolygons(
+        data = sf::st_as_sf(jilin),
+        fillColor = ~ pal(total),
+        stroke = T,
+        color = "#8e92c1",
+        weight = 2,
+        smoothFactor = 1,
+        opacity = 1,
+        fillOpacity = 0.2,
+        label = ~city,
+        highlightOptions = highlightOptions(
+            color = "green",
+            weight = 2,
+            bringToFront = TRUE
+        ),
+        labelOptions = labelOptions(
+            style = list("font-weight" = "normal", padding = "3px 8px"),
+            textsize = "12px",
+            direction = "auto"
+        )
+    ) %>%
+    addCircles(
+        label = ~unit,
+        opacity = 1,
+        color = "#5a64ac",
+        data = jilin_point,
+        lng = ~longitude,
+        lat = ~latitude,
+        weight = 6.6,
+        group = "Locations of Social Protests"
+    ) %>%
+    addMarkers(
+        data = jilin_point,
+        lng = ~longitude,
+        lat = ~latitude,
+        clusterOptions = markerClusterOptions(),
+        group = "Distribution"
+    ) %>% 
+    addAwesomeMarkers(
+        data = petition_office,
+        lng = ~longitude,
+        lat = ~latitude,
+        icon = icons,
+        label = ~contents
+    ) %>%
+    addLegend(
+        data = jilin,
+        bins = 4,
+        pal = pal,
+        values = ~total,
+        opacity = 0.7,
+        title = "The intensity of police's use of coercion",
+        position = "bottomright"
+    ) %>%
+    addLayersControl(
+        baseGroups = c("Locations of Social Protests", "Distribution"),
+        options = layersControlOptions(collapsed = FALSE)
+    )
+```

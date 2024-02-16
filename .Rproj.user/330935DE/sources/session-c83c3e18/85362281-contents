@@ -1,0 +1,169 @@
+---
+title: "Chinese court judgement data"
+date: Oct 27, 2023
+page-layout: full
+toc: false
+author:
+  - name: Xinzhuo Huang
+    orcid: 0009-0007-6448-5114
+    email: xhuangcb@connect.ust.hk
+    affiliations:
+      - name: HKUST SOSC
+categories: [Web Scraping, Court Rulings]
+description: "Publication rate and deletion rate"
+feed: true
+cap-location: bottom
+reference-location: margin
+citation-location: margin
+format:
+  html:
+    grid:
+        margin-width: 350px
+citation: 
+    author: Huang Xinzhuo
+listing: 
+    image-placeholder: "web_crawler.png"
+---
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+```
+## Overview {.unnumbered .unlisted}
+
+::: {.g-col-12 .g-col-md-4 style="text-align: justify;"}
+The author <img src="web_crawler.png" align="left" width="150" height="170"/> has colleted tens of millions of court judgments by province and by law from 2014 to 2023 with web scraping. For more technical details about the web scraper, please refer to my [blog](https://xinzhuo.work/blog/).
+
+By comparing the data in the annual work report presented by the Supreme People's court (最高人民法院) to the National People's Congress (全国人大) each year with the data made public on the [China Judgements Online](https://wenshu.court.gov.cn/), I estimate the pulication rate of legal documents in China. Moreover, based on my own database, I also estimate how many previously published legal documents have been deleted by China Judgement Online.
+:::
+
+<br>
+
+## Sample Data
+
+What does our cleaned data look like?
+
+```{r}
+#| echo: false
+require(pacman)
+p_load(reticulate, httr, tidyverse, rvest, reactable, tippy, htmltools, rio, showtext, ggrepel, ggstream, plotly)
+
+render_reactable_cell_with_tippy <- function(text, tooltip) {
+    div(
+        style = "max-width: 800px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+        tippy(text = text, tooltip = tooltip)
+    )
+}
+
+data3 <- read_rds("E:/OneDrive - HKUST Connect/dataverse/威科先行/个人网页展示数据.Rds") %>%
+    arrange(desc(Date))
+
+table3 <- reactable(data3,
+    searchable = TRUE,
+    theme = reactableTheme(
+        headerStyle = list(
+            "&:hover[aria-sort]" = list(background = "hsl(0, 0%, 96%)"),
+            "&[aria-sort='ascending'], &[aria-sort='descending']" = list(background = "hsl(0, 0%, 96%)"),
+            borderColor = "#555"
+        )
+    ),
+    columns = list(
+        `Process` = colDef(
+            html = TRUE,
+            cell = function(value, index, name) {
+                render_reactable_cell_with_tippy(text = value, tooltip = value)
+            }
+        ),
+        `Result` = colDef(
+            html = TRUE,
+            cell = function(value, index, name) {
+                render_reactable_cell_with_tippy(text = value, tooltip = value)
+            }
+        )
+    )
+)
+
+table3
+```
+
+## Pulication Rate
+
+```{r}
+#| code-summary: "ggplot2 fonts"
+font_add("Proxima", "E:\\OneDrive - HKUST Connect\\dataverse\\可视化\\Proxima Nova Extrabold.ttf")
+font_add("Proxima Head", "E:\\OneDrive - HKUST Connect\\dataverse\\可视化\\Publico Headline Web Bold.ttf")
+
+showtext_auto()
+
+colors <- c(
+    "#1380A1",
+    "#edae49",
+    "#66a182",
+    "#2e4057",
+    "#8d96a3",
+    "#d1495b"
+)
+```
+
+```{r}
+#| echo: false
+#| out-width: 100%
+trends_data <- rio::import("E:/OneDrive - HKUST Connect/dataverse/开庭公告/最高法工作报告.xlsx", setclass = "tibble") %>%
+    select(1:5) %>%
+    mutate(
+        across(everything(), ~ str_remove_all(., "万件|民商事案件|）|（") |> as.numeric()),
+        year = 年份 |> as.character(),
+        年份 = NULL,
+    ) %>%
+    slice(-10) %>%
+    pivot_longer(!`year`) %>%
+    mutate(
+        name = case_when(
+            str_detect(name, "民事") ~ "Civil",
+            str_detect(name, "刑事") ~ "Criminal",
+            str_detect(name, "行政") ~ "Administrative",
+            str_detect(name, "执行") ~ "Enforcement"
+        )
+    )
+
+trends_data$name <- factor(trends_data$name, levels = c("Civil", "Enforcement", "Criminal", "Administrative"))
+
+bar <- trends_data %>%
+    mutate(Category = name) %>% 
+    ggplot(aes(year, value, fill = Category)) +
+    geom_bar(stat = "identity", position = "dodge") +
+    xlab("") +
+    ylab("Count in millions") +
+    scale_fill_manual(
+        values = c("#1380A1", "#edae49", "#d1495b", "#66a182")
+    ) +
+    guides(
+        color = guide_legend(
+            title = ""
+        )
+    ) +
+    labs(
+        title = "First-instance",
+        subtitle = "civil, criminal, administrative, and enforcement proceedings in courts at all levels"
+    ) +
+    theme(
+        plot.title = element_text(face = "bold", size = 32, family = "Proxima Head"),
+        plot.subtitle = element_text(face = "italic", size = 15, family = "Proxima Head"),
+        axis.text = element_text(
+            family = "Proxima Head",
+            color = "#555665",
+            size = 12
+        ),
+        axis.title.y = element_text(
+            family = "Proxima Head",
+        ),
+        legend.text = element_text(family = "Proxima Head"),
+        legend.title = element_blank()
+    ) +
+    ggthemes::theme_hc()
+
+ggplotly(bar)
+```
+
+## Deletion Rate

@@ -1,0 +1,120 @@
+---
+title: "lacR"
+date: "Oct 20, 2023"
+categories: [R Package, LAC]
+description: "A Chinese tokenizer based on Baidu LAC (Lexical Analysis of Chinese)"
+code-fold: false
+feed: true
+cap-location: bottom
+---
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+```
+
+:::: {.grid}
+::: {.g-col-12 .g-col-md-8 style="text-align: left;"}
+## Overview {.unnumbered .unlisted}
+ Compared to other Chinese word segmentation schemes, LAC performs rather well in entity information extraction, particularly for personal names and place names.
+:::
+::: {.g-col-15 .g-col-md-4 style="text-align: center;"}
+<br>
+<br>
+<img src="lacR.png" width="180">        
+:::
+::::
+
+## Note
+
+This package will automatically create a conda or python virtual environment. This may encounter bugs in RStudio. If you do not want to install it, you can directly use the following code after using `reticulate`.
+
+```{r}
+#| eval: false
+reticulate::use_python("'C:\\Users\\xhuangcb\\anaconda3\\envs\\spacy\\python.exe'") # your python location
+
+LAC <- reticulate::import("LAC")
+
+lac_seg <- LAC$LAC(mode = "seg")
+
+lac_seg$load_customization("custom.txt") # optional
+
+lac_analysis <- LAC$LAC(mode = "lac")
+
+tokenizer <- \(string, analysis = FALSE, progress = TRUE, min = 1) {
+    if (progress == TRUE) {
+        bar <- list(
+            format = "Processing: {cli::pb_current}  {cli::pb_bar} {cli::pb_percent}  Rate: {cli::pb_rate}  ETA: {cli::pb_eta}"
+        )
+    } else {
+        bar <- FALSE
+    }
+
+    if (analysis == FALSE) {
+        map(
+            string,
+            \(x) {
+                if (!is.na(nchar(x))) {
+                    if (nchar(x) > 1) {
+                        tokens <- lac_seg$run(x)
+                        tokens <- tokens[nchar(tokens) > min]
+                        return(tokens)
+                    }
+                }
+            },
+            .progress = bar
+        )
+    } else {
+        map(
+            string,
+            \(x) {
+                if (!is.na(nchar(x))) {
+                    if (nchar(x) > 1) {
+                        tokens <- lac_analysis$run(x)
+                        names(tokens[[1]]) <- tokens[[2]]
+                        tokens[[1]] <- tokens[[1]][nchar(tokens[[1]]) > min]
+                        return(tokens[[1]])
+                    }
+                }
+            },
+            .progress = bar
+        )
+    }
+}
+
+df %>%
+    mutate(
+        words = str_remove_all(contents, "\\p{P}|\\s+") |> tokenizer(analysis = TRUE, min = 1)
+    ) # how to call tokenizer in a data frame
+```
+
+## Installation
+```{r}
+#| eval: false
+remotes::install_github("xinzhuohkust/lacR")
+```
+
+## Usage
+### setup
+```{r}
+#| eval: false
+setup_lac(custom = FALSE, location = NULL) # not use custom dictionary
+```
+### text segmentation
+```{r}
+#| eval: false
+tokenizer(
+  string = "我和梅东在上海市中山北路与华东政法大学师生共度一个春节",
+  analysis = FALSE, # not to perform part-of-speech tagging
+  progress = TRUE, # display progress bar
+  min = 0 # keep all words
+)
+```
+
+```{r}
+#| echo: false
+readRDS("E:/OneDrive - HKUST Connect/personal website/main/project/lacR/tokens_result.Rds")
+```
+
+## Rcpp version (coming soon)

@@ -1,0 +1,87 @@
+---
+title: "Practical Techniques for Web Scraping"
+date: "Jun 20 2023"
+categories: [R, Python, Web Scraping]
+description: "with R and Python"
+code-fold: show
+feed: true
+---
+
+![](webscraping.jpg){fig-align="center" width="500"}
+
+### User Agent Switcher
+
+```{r}
+#| echo: false
+#| message: false
+require("pacman")
+p_load(httr2, tidyverse, jsonlite, rvest)
+```
+
+Based on the `Python` project [fake-useragent.](https://pypi.org/project/fake-useragent/){target="_blank"}
+
+```{r}
+user_agents <- "https://raw.githubusercontent.com/fake-useragent/fake-useragent/master/src/fake_useragent/data/browsers.json" %>% 
+  read_html() %>% 
+  html_text() %>% 
+  str_extract_all("\\{.+?\\}") %>% 
+  pluck(1) %>% 
+  map_dfr(~ fromJSON(.) |> as_tibble_row())
+  
+nrow(user_agents) # there are 52 user agents in total
+```
+
+<br> Get a fake user agent randomly.
+
+```{r}
+sample_n(user_agents, 1) %>% 
+  select(useragent)
+```
+
+<br>
+
+### Application: web scraper for the landchina.com
+
+```{r}
+#| eval: false
+extract_land_info <- possibly(
+    function(id) {
+        info <- "https://api.landchina.com/tGdxm/result/detail" %>%
+            request() %>%
+            req_headers("user-agent" = sample_n(user_agents, 1)$useragent) %>%# <1>
+            req_timeout(12) %>%
+            req_proxy("yourproxy", 2023) %>%
+            req_retry(
+              max_tries = 5,              
+              max_seconds = 30,
+              is_transient = ~5
+            ) %>%
+            req_body_json(
+                list("gdGuid" = id),
+                unbox = TRUE
+            ) %>%
+            req_perform() %>%
+            pluck("body") %>% 
+            read_html() %>%
+            html_text()
+
+        if (str_detect(info, id)) {
+            return(info)
+        } else {
+            return("error!")
+        }
+    },
+    otherwise = "error!"
+) # web scraper using httr2
+```
+1. User agent switcher
+
+```{r}
+#| eval: false
+extract_land_info("48BF016EBDD6409FA4622466C964D869")
+```
+
+```{r}
+#| echo: false
+strwrap("{\"msg\":\"操作成功\",\"code\":200,\"relate\":[{\"stage\":3,\"showStage\":3,\"gdGuid\":\"48BF016EBDD6409FA4622466C964D869\",\"zdZl\":\"台北路1号\\n\",\"cjJg\":2100,\"gyFs\":\"协议出让\"}],\"data\":{\"province\":\"山东省\",\"city\":\"青岛市本级\",\"xzqFullName\":\"山东省青岛市本级\",\"tdLy\":\"新增建设用地(来自存量库)\",\"gdGuid\":\"48BF016EBDD6409FA4622466C964D869\",\"xzqDm\":\"370200000\",\"tdJb\":\"二级\",\"tdZl\":\"台北路1号\\n\",\"gdZmj\":0.2613,\"gyFs\":\"协议出让\",\"xzMj\":0,\"clMj\":0.2613,\"je\":2100,\"qdRq\":1169568000000,\"pzJg\":\"07-7\\n\",\"xmCj\":0},\"payAgree\":[]}", width = 10)
+```

@@ -1,0 +1,237 @@
+---
+title: "Online Captcha Solving When Using R for Web Scraping"
+date: "Oct 28, 2023"
+categories: [R, Python, OCR, Wec Scraping]
+description: "use OCR"
+code-fold: show
+feed: true
+cap-location: bottom
+execute: 
+  warning: false
+  message: false
+citation: 
+    author: Huang Xinzhuo
+---
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+```
+![](captcha.jpg){fig-align="center" width="300"}
+
+How to write a robust web scraper using R that can automatically bypass captcha checks? Our basic solution is as follows:
+
+Firstly, maintain a logged-in state with `httr`. Next, download the captcha locally. Following this, import the Python module [`ddddocr`](https://github.com/sml2h3/ddddocr) for OCR recognition to identify the characters in the captcha. After the captcha has been successfully identified, we submit it to bypass the verification.
+
+This allows us to continue with our web scraping activities unhindered. In web scraping, effective exception handling is rather important, and the functional programming tools provided by `purrr` can be incredibly helpful.
+
+```{r}
+#| code-fold: true
+#| code-summary: Pakcage Management
+require(pacman)
+p_load(reticulate, httr, tidyverse, rvest, reactable, tippy, htmltools)
+```
+
+```{r}
+#| eval: false
+handle <- handle("sample_website")
+
+GET(
+    "sample_website", 
+    handle = handle, 
+    write_disk("blog/captcha/captcha_new.jpg", overwrite = TRUE)
+)
+```
+
+![](captcha_new.png){fig-align="center" width="200"}
+
+OCR recognition:
+
+```{r}
+#| eval: false
+reticulate::use_python("C:\\Users\\xhuangcb\\anaconda3\\envs\\pytorch_gpu\\python.exe")
+
+ddddocr <- reticulate::import("ddddocr")
+
+ocr <- ddddocr$DdddOcr(beta = TRUE)
+
+builtins <- import_builtins()
+
+f <- builtins$open("blog/captcha/captcha_new.jpg", "rb")
+
+image <- f$read()
+
+yzm <- ocr$classification(image)
+```
+
+```{r}
+#| echo: false
+yzm <- "nf353"
+yzm
+```
+
+After submission, the status code is 200, indicating success.
+
+```{r}
+#| eval: false
+response <- POST(
+    "sample_website",
+    body = list(yzm = yzm),
+    handle = handle
+)
+
+response$status_code
+```
+
+```{r}
+#| echo: false
+200
+```
+
+Let's integrate the OCR module into our web scraping process. With the powerful exception handling provided by `purrr`, we can create a more robust web scraper, which supports automatic retry and bypassing captchas.
+
+```{r}
+#| eval: false
+extract_links <- possibly(
+    insistently(
+        \(page_num = 1, source = 2, sleep = sample(seq(2, 5, 0.05), 1), location = NULL) {
+            page <- POST(
+                url = "sample_website",
+                encode = "form",
+                body = list(
+                    `ajlb` = "2",
+                    `st` = "1",
+                    `jbfyId` = "",
+                    `sxnflx` = "0",
+                    `zscq` = "",
+                    `cwslbmc` = "",
+                    `prompt` = "",
+                    `dsrName` = "",
+                    `ajmc` = "",
+                    `ay` = "",
+                    `ah` = "",
+                    `startCprq` = "2013-01-01",
+                    `endCprq` = "2023-10-23",
+                    `page` = page_num
+                ),
+                handle = handle
+            )
+
+            sign <- page %>%
+                read_html() %>%
+                html_text() %>%
+                str_remove_all("\\\r|\\\n|\\\t|\\s+|\\p{P}")
+
+            if (sign == "varcontextPath=提交") {
+                GET(
+                    "sample_website",
+                    handle = handle,
+                    write_disk("blog/captcha/captcha_new.jpg", overwrite = TRUE)
+                )
+
+                yzm <- ocr$classification(image)
+
+                response <- POST(
+                    "sample_website",
+                    body = list(yzm = yzm),
+                    handle = handle
+                )
+
+                if(response$status_code != 200) {stop("OCR failed!")}
+                
+            } else {
+                links <- page %>%
+                    read_html() %>% 
+                    html_elements(xpath = "//li[@class='refushCpws']") %>%
+                    html_nodes("a")
+
+                id <- links %>%
+                    html_attr("href")
+
+                title <- links %>%
+                    html_text(trim = TRUE)
+
+                courts <- page %>%
+                    read_html() %>%
+                    html_elements(xpath = "//span[@class='sp_right']")
+
+                court <- courts %>%
+                    html_elements(xpath = "//span[@class='sp_name']") %>%
+                    html_text(trim = TRUE)
+
+                date <- courts %>%
+                    html_elements(xpath = "//span[@class='sp_time']") %>%
+                    html_text(trim = TRUE)
+
+                result <- tibble(
+                    id = id,
+                    title = title,
+                    court = court,
+                    date = date
+                )
+            }
+
+            Sys.sleep(sleep)
+
+            if (is.null(location)) {
+                return(result)
+            } else {
+                write_rds(result, file = str_c(location, "/", page_num, ".Rds"))
+            }
+        },
+        rate = rate_backoff(
+            pause_base = 2,
+            pause_cap = 60,
+            pause_min = 1,
+            max_times = 10,
+            jitter = TRUE
+        )
+    )
+)
+
+result <- map(1:10, extract_links, .progress = TRUE) 
+```
+
+<br> The results of running this web scraper are as follows:
+
+```{r}
+#| echo: false
+render_reactable_cell_with_tippy <- function(text, tooltip) {
+    div(
+        style = "max-width: 800px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;",
+        tippy(text = text, tooltip = tooltip)
+    )
+}
+
+data2 <- read_rds("sample.Rds") %>%
+    mutate(
+    across(everything(), ~ str_replace_all(., ".{2}市(.{2,4}区)?", "***")),
+    Date = ymd(date),
+    Title = title,
+    Court = court
+) %>%
+    arrange(desc(Date)) %>% 
+    select(Date, Title, Court)
+
+table2 <- reactable(data2,
+    searchable = TRUE,
+    theme = reactableTheme(
+        headerStyle = list(
+            "&:hover[aria-sort]" = list(background = "hsl(0, 0%, 96%)"),
+            "&[aria-sort='ascending'], &[aria-sort='descending']" = list(background = "hsl(0, 0%, 96%)"),
+            borderColor = "#555"
+        )
+    ),
+    columns = list(
+        `Title` = colDef(
+            html = TRUE,
+            cell = function(value, index, name) {
+                render_reactable_cell_with_tippy(text = value, tooltip = value)
+            }
+        )
+    )
+)
+
+table2 
+```

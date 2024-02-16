@@ -1,0 +1,14 @@
+{
+  "hash": "3ac0a2cee078857892a3e010170398aa",
+  "result": {
+    "markdown": "---\ntitle: \"RconnectPy Package\"\ndate: \"last-modified\"\nauthor: Xinzhuo HUANG\ncategories: [R Package]\ndescription: \"An R package for easy installation and importing of python modules.\"\ncode-fold: false\nfeed: true\ncap-location: bottom\n---\n\n```{=html}\n<style>\nbody {text-align: justify}\n</style>\n```\n\n\n:::: {.grid}\n::: {.g-col-12 .g-col-md-8 style=\"text-align: left;\"}\n## Overview {.unnumbered .unlisted}\nAn R package for easy installation and importing of python modules.\n:::\n::: {.g-col-15 .g-col-md-4 style=\"text-align: center;\"}\n<br>\n<br>\n<img src=\"RconnectPy.png\" width=\"180\">        \n:::\n::::\n\n## Installation\n\n::: {.cell}\n\n```{.r .cell-code}\nremotes::install_github(\"xinzhuohkust/RconnectPy\")\n```\n:::\n\n\n## Usage\n\n\n::: {.cell}\n\n```{.r .cell-code}\nRconnectPy::where_py()\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nRconnectPy::install_py_packages(python, \"pandas\")\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\npackages <- RconnectPy::import_py_packages(\"pandas\", \"selenium\", \"asent\")\n```\n:::",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

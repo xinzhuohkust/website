@@ -1,0 +1,77 @@
+{
+  "index.qmd": {
+    "index.html": "5b29f6c4"
+  },
+  "about.qmd": {
+    "about.html": "e5c80912"
+  },
+  "blog/captcha/index.qmd": {
+    "index.html": "913bef05"
+  },
+  "blog/causal inference/index.qmd": {
+    "index.html": "813ef4f9"
+  },
+  "blog/index.qmd": {
+    "index.html": "fea12655"
+  },
+  "blog/reverse_js/index.qmd": {
+    "index.html": "dccb7d80"
+  },
+  "blog/run R code in the browser/index.qmd": {
+    "index.html": "d894f570"
+  },
+  "blog/sentiment analysis/index.qmd": {
+    "index.html": "4109c379"
+  },
+  "blog/web crawling/index.qmd": {
+    "index.html": "8d7c877e"
+  },
+  "cv/index.qmd": {
+    "index.html": "bf5e941b"
+  },
+  "data/index.qmd": {
+    "index.html": "9ed0c21e"
+  },
+  "data/judgment/index.qmd": {
+    "index.html": "562cc691"
+  },
+  "data/penality/index.qmd": {
+    "index.html": "b96bf01a"
+  },
+  "data/search engine/index.qmd": {
+    "index.html": "27a14742"
+  },
+  "project/Geocoding/index.qmd": {
+    "index.html": "3dab940d"
+  },
+  "project/index.qmd": {
+    "index.html": "9f76e719"
+  },
+  "project/RconnectPy/index.qmd": {
+    "index.html": "9a30a32f"
+  },
+  "project/sentimentRPy/index.qmd": {
+    "index.html": "21aba0f2"
+  },
+  "404.qmd": {
+    "404.html": "20362049"
+  },
+  "love_count.qmd": {
+    "love_count.html": "31ef235e"
+  },
+  "anniversary.qmd": {
+    "anniversary.html": "2238f89a"
+  },
+  "blog/github action R/index.qmd": {
+    "index.html": "f64048c5"
+  },
+  "blog/vector search/index.qmd": {
+    "index.html": "b6907334"
+  },
+  "visualization/index.qmd": {
+    "index.html": "5eeaa110"
+  },
+  "project/lacR/index.qmd": {
+    "index.html": "449199ce"
+  }
+}

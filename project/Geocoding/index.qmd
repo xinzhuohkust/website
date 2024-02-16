@@ -1,0 +1,127 @@
+---
+title: "Geocoding R Package"
+date: "May 23, 2023"
+categories: [R Package, Geocoding]
+description: "An R package that provides geocoding, reverse geocoding, route planning, and advanced geographic visualization. Moreover, this package provides economic and social information such as nighttime lights and population based on geographic coding."
+code-fold: false
+feed: true
+cap-location: bottom
+---
+
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+```
+
+:::: {.grid}
+::: {.g-col-12 .g-col-md-8 style="text-align: left;"}
+## Overview {.unnumbered .unlisted}
+  The Geocoding package provides functions for geocoding Chinese addresses. 
+  
+  The package is designed for researchers, analysts, and other users who need to work with Chinese address data.
+:::
+::: {.g-col-15 .g-col-md-4 style="text-align: center;"}
+<br>
+<br>
+<img src="geo_icon.png" width="180">        
+:::
+::::
+
+## Installation
+```{r}
+#| eval: false
+remotes::install_github("xinzhuohkust/Geocoding")
+```
+
+```{r}
+#| echo: false
+#| message: false
+require("pacman")
+
+p_load(knitr, kableExtra)
+
+print_kable <- \(result) {
+    kbl(
+        result,
+        digits = 3,
+        #caption = title,
+        #booktabs = TRUE
+    ) %>%
+    kable_paper("hover", full_width = FALSE)
+}
+```
+
+## Usage
+### geocoding
+
+```{r}
+#| eval: false
+Geocoding::get_MCT("国家信访局") |>
+  Geocoding::convert_MCT()
+```
+
+```{r}
+#| echo: false
+coord <- Geocoding::get_MCT("国家信访局") |>
+  Geocoding::convert_MCT()
+
+names(coord) <- c("longitude", "latitude")
+
+tibble::as_tibble_row(coord) |>
+  print_kable()
+```
+
+
+### reverse geocoding
+```{r}
+#| eval: false
+Geocoding::get_MCT("国家信访局") |>
+  Geocoding::get_admin_info(uid = TRUE)
+```
+
+```{r}
+#| echo: false
+Geocoding::get_MCT("国家信访局") |>
+  Geocoding::get_admin_info(uid = TRUE) |>
+  print_kable()
+```
+
+### train planning
+```{r}
+#| eval: false
+Geocoding::train_plan(
+  origin = Geocoding::get_MCT("安徽省六安市裕安区") |> Geocoding::convert_MCT(),
+  destination = Geocoding::get_MCT("国家信访局") |> Geocoding::convert_MCT(),
+  sleep = 0.5,
+  ak = "your ak"
+)
+```
+
+```{r}
+#| echo: false
+readRDS("E:/OneDrive - HKUST Connect/writing_sample/data/hebei/website_data_train.Rds") |>
+print_kable()
+```
+
+
+## Visualization 
+
+### ggplot2 integration
+```{r}
+#| eval: false
+Geocoding::plot_geocoding(
+  data = "night",
+  label = "jilin",
+  year = "2022"
+)
+```
+
+<img src="light.png" width="1000"> 
+
+### interactive map and 3D map (coming soon)
+
+```{=html}
+<script type='text/javascript' id='clustrmaps' src='//cdn.clustrmaps.com/map_v2.js?cl=fdfdfd&w=70&t=n&d=xZ5N7O41jb8FCtvQIiC0y_H6QbZgte9z9WlfHIbXC9w&co=fdfdfd&ct=fdfdfd&cmo=fdfdfd&cmn=fdfdfd'></script>
+```

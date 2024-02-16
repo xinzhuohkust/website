@@ -1,0 +1,130 @@
+---
+title: ""
+subtitle: ""
+listing:
+  id: listing
+  contents: .
+  fields: [image, date, title, reading-time, description]
+  sort: "date desc"
+  type: grid
+  #categories: numbered
+  categories: false
+  sort-ui: [date, reading-time]
+  feed: 
+    categories: R
+    items: 40
+  page-size: 40
+  grid-columns: 4
+page-layout: full
+title-block-banner: true
+comments: false
+date-format: medium
+author: ""
+date-modified: ""
+---
+
+```{=html}
+<body>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="/scss/style_sosc_effect.css">
+</body>
+
+<body>
+<!-- partial:index.partial.html -->
+<div class="txt" contenteditable="false">
+  Social Science
+</div>
+<!-- partial -->
+  
+</body>
+```
+<br> <br>
+
+::: {#listing}
+:::
+
+<head><link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Advent Pro&display=swap"></head>
+
+<body>
+
+```{=html}
+<script>
+        (function () {
+            var a_idx = 0;
+            window.onclick = function (event) {
+                // 查找具有指定类名的元素
+                function hasClass(element, className) {
+                    return (' ' + element.className + ' ').indexOf(' ' + className + ' ') > -1;
+                }
+
+                function isDescendant(parent, child) {
+                    let node = child.parentNode;
+                    while (node !== null) {
+                        if (node === parent) {
+                            return true;
+                        }
+                        node = node.parentNode;
+                    }
+                    return false;
+                }
+
+                const targetClass = "quarto-grid-item card h-100 card-left";
+                let targetElement = null;
+                document.querySelectorAll("." + targetClass.split(" ").join(".")).forEach(function (element) {
+                    if (event.target === element || isDescendant(element, event.target)) {
+                        targetElement = element;
+                    }
+                });
+
+                // 如果找到目标元素，则不执行特效
+                if (targetElement) {
+                    return;
+                }
+                
+                var a = new Array("Political Science", "China Studies", "R", "Python", "JavaScript", "Causal Inference", "Social Protest", "Governmental Responsiveness", "HKUST", "Web Scraping", "Computational Text Analysis");
+ 
+                var heart = document.createElement("b"); //创建b元素
+                heart.onselectstart = new Function('event.returnValue=false'); //防止拖动
+ 
+                document.body.appendChild(heart).innerHTML = a[a_idx]; //将b元素添加到页面上
+                a_idx = (a_idx + 1) % a.length;
+                heart.style.cssText = "position: fixed;left:-100%;"; //给p元素设置样式
+ 
+                var f = 16, // 字体大小
+                    x = event.clientX - f / 2, // 横坐标
+                    y = event.clientY - f, // 纵坐标
+                    c = randomColor(), // 随机颜色
+                    a = 1, // 透明度
+                    s = 1.2; // 放大缩小
+ 
+                var timer = setInterval(function () { //添加定时器
+                    if (a <= 0) {
+                        document.body.removeChild(heart);
+                        clearInterval(timer);
+                    } else {
+                        heart.style.cssText = "font-family:Advent Pro;font-size:20px;cursor: default;position: fixed;color:" +
+                            c + ";left:" + x + "px;top:" + y + "px;opacity:" + a + ";transform:scale(" +
+                            s + ");";
+ 
+                        y--;
+                        a -= 0.016;
+                        s += 0.002;
+                    }
+                }, 15)
+ 
+            }
+            // 随机颜色
+            function randomColor() {
+ 
+                var colors = ['#666666'];
+                return colors[Math.floor(Math.random() * colors.length)];
+ 
+            }
+        }());
+    </script>
+```
+</body>
+
+```{=html}
+<script type="text/javascript" src="//cdn.bootcss.com/canvas-nest.js/1.0.0/canvas-nest.min.js"></script>
+```

@@ -1,0 +1,23 @@
+---
+title: "Guide to Topic Modeling with Chinese Text"
+date: "Sep 29 2023"
+categories: [R, Topic Modeling, Lac, STM]
+description: "from tokenization to model diagnostics"
+code-fold: show
+feed: true
+citation: 
+    author: Huang Xinzhuo
+execute:
+    warning: false
+    message: false
+    error: false
+---
+
+## Flow Chart
+
+
+```{r}
+require("pacman")
+
+p_load(ggflowchart)
+```

@@ -1,0 +1,39 @@
+[
+  {
+    "listing": "/data/judgment/index.html",
+    "items": []
+  },
+  {
+    "listing": "/blog/index.html",
+    "items": [
+      "/blog/vector search/index.html",
+      "/blog/github action R/index.html",
+      "/blog/captcha/index.html",
+      "/blog/reverse_js/index.html",
+      "/blog/web crawling/index.html",
+      "/blog/run R code in the browser/index.html",
+      "/blog/causal inference/index.html",
+      "/blog/sentiment analysis/index.html"
+    ]
+  },
+  {
+    "listing": "/data/index.html",
+    "items": [
+      "/data/penality/index.html",
+      "/data/search engine/index.html",
+      "/data/judgment/index.html"
+    ]
+  },
+  {
+    "listing": "/index.html",
+    "items": []
+  },
+  {
+    "listing": "/project/index.html",
+    "items": [
+      "/project/Geocoding/index.html",
+      "/project/sentimentRPy/index.html",
+      "/project/lacR/index.html"
+    ]
+  }
+]

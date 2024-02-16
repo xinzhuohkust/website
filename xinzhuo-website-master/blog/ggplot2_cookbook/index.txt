@@ -1,0 +1,91 @@
+---
+title: "Visualization Cookbook"
+description: "with ggplot2"
+filters:
+  - nutshell
+  - lightbox
+lightbox: autho
+date: "July 09, 2023"
+toc-expand: 2
+code-fold: show
+---
+<br>
+
+# THEME
+## package management
+
+```{r}
+require("pacman")
+p_load(tidyverse, showtext, plotly, ggthemes)
+```
+
+## color palette
+
+```{r}
+colors <- c("#2e4057", "#66a182","#edae49", "#d1495b", "#00798c")
+```
+
+```{=html}
+<script src="https://coolors.co/palette-widget/widget.js"></script>
+<script data-id="0655854661203433">new CoolorsPaletteWidget("0655854661203433", ["2e4057","66a182","edae49","d1495b","00798c"]); </script>
+```
+
+## fonts
+
+```{r}
+font_add("Proxiama", "Proxima Nova Extrabold.ttf")
+font_add("Publico", "Publico Headline Web Bold.ttf")
+font_add_google("Heebo", "heebo")
+font_add_google("Share Tech Mono", "techmono")
+showtext_auto()                        
+```
+
+
+## active theme
+
+```{r}
+theme_custom <- theme_void(base_size = 10) +
+    theme(
+        aspect.ratio = 0.5,
+        plot.background = element_rect(fill = "#fdfdfd", color = NA),
+        plot.margin = margin(rep(0.5, 4), unit = "cm"),
+        axis.text = element_text(
+            family = "Publico",
+            color = "#555665",
+            size = 10,
+            margin = margin(t = 0.5, r = 0.5, unit = "cm")
+        ),
+        panel.grid.major = element_line(
+            linewidth = 0.2,
+            color = "#555665",
+            linetype = "dashed"
+        ),
+        axis.title = element_text(
+            family = "Proxiama",
+            size = 15,
+            margin = margin(t = 0.5, r = 0.5, unit = "cm")
+        ),
+        legend.text = element_text(
+            family = "Publico",
+            color = "#555665"
+        )
+    ) 
+```
+
+```{r}
+simu_data <- tibble(
+    `Pro China` = runif(100, min = -1, max = 1),
+    `Pro USA` = runif(100, min = -1, max = 1)
+) %>%
+    pivot_longer(cols = 1:2, names_to = "Group")
+```
+
+
+```{r}
+simu_data %>% 
+    ggplot(aes(value, color = Group, fill = Group)) +
+    geom_density(size = 1.2, alpha = 0.1) +
+    scale_colour_manual(values = colors[c(1, 4)]) +
+    theme_custom +
+    guides(color = guide_legend(override.aes = list(shape = c(18))))
+```

@@ -1,0 +1,28 @@
+---
+title: "Research"
+subtitle: "Research Projects and R packages"
+listing:
+  id: listing
+  contents: .
+  fields: [image, title, description, date]
+  field-display-names:
+    file-modified: "Updated"
+  sort: "date asc"
+  type: default
+  categories: numbered
+  sort-ui: [date, file-modified]
+  filter-ui: false
+  feed: 
+    categories: R
+    items: 40
+  page-size: 40
+page-layout: full
+title-block-banner: true
+comments: false
+date-format: medium
+author: ""
+date-modified: ""
+---
+
+::: {#listing}
+:::

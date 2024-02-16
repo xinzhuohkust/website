@@ -1,0 +1,591 @@
+---
+title: "Causal Inference Practical Methods"
+date: "May 15, 2023"
+categories: [R, DiD, RD, IV, Causal Inference]
+description: "with R"
+code-fold: show
+feed: true
+cap-location: bottom
+---
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+```
+# Setup {.unnumbered}
+
+```{r}
+#| message: false
+#| warning: false
+require("pacman")
+
+p_load(
+    tibble, dplyr, furrr, purrr, tidyr, stringr, rio, ggplot2, knitr, broom, kableExtra, lfe, plm, ggthemes, skimr, ggpmisc, AER, dagitty, ggdag, rdrobust, rddensity, did
+)
+
+print_kable <- \(result, title) {
+    kable(
+        result,
+        digits = 3,
+        caption = title,
+        booktabs = TRUE
+    )
+}
+```
+
+```{r}
+#| echo: false
+#| output: false
+viridisLite::viridis(8, option = "plasma", begin = 0.1, end = 0.9)
+```
+
+# Fixed Effects
+
+## Linear Dummy Variabel Model
+
+Fixed effects model shows that the beer tax does reduce fatalities.
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-cap: "The relationship between the beer tax and fatality"
+#| cap-location: top
+fatality <- import(
+    "E:/OneDrive - HKUST Connect/assignment/assignment3/fatality.csv",
+    setclass = "tibble"
+)
+
+fatality %>%
+    ggplot(aes(x = beertax, y = fatality_rate)) +
+    geom_point(aes(color = state), size = 2.3) +
+    geom_smooth(
+        aes(group = state, color = state),
+        method = "lm",
+        se = FALSE
+    ) +
+    geom_smooth(method = "lm", linetype = "dashed", color = "#8E8E93") +
+    xlab("Beer Tax") +
+    ylab("Fatalities") +
+    ggthemes::theme_hc() +
+    theme(panel.grid.minor = element_blank(), legend.position = "none")
+```
+
+```{r}
+#| message: false
+#| warning: false
+linear_dummy_formula <- fatality %>%
+    pull(state) %>%
+    sprintf("`%s`", .) %>%
+    unique() %>%
+    str_c(collapse = " + ") %>%
+    str_c("fatality_rate ~ 0 + beertax + ", ., collapse = " + ") %>%
+    as.formula()
+
+linear_dummy <- fatality %>%
+    pivot_wider(
+        names_from = state,
+        values_from = state
+    ) %>%
+    mutate(
+        across(3:50, ~ str_replace(., "\\w+", "1")),
+        across(3:50, ~ replace_na(., "0")),
+        across(3:50, as.numeric)
+    ) %>%
+    lm(
+        linear_dummy_formula,
+        data = .
+    )
+
+linear_dummy %>%
+    tidy() %>%
+    slice(1) %>%
+    print_kable(title = "Linear dummy variable model")
+```
+
+## Fixed effect in standard packages
+
+```{r}
+#| message: false
+#| warning: false
+fixed_effect_plm <- fatality %>%
+    pdata.frame(index = c("state")) %>%
+    plm(
+        fatality_rate ~ beertax,
+        data = .,
+        model = "within",
+        effect = "individual"
+    )
+
+fixed_clustered_plm <- fixed_effect_plm %>%
+    tidy() %>%
+    mutate(
+        category = "fixed effects with plm",
+        `std.error` = vcovHC(
+            fixed_effect_plm,
+            type = "HC1",
+            cluster = "group"
+        ) |>
+            diag() |>
+            sqrt(),
+        statistic = coef(fixed_effect_plm) / `std.error`,
+        `p.value` = 2 * pt(
+            abs(statistic),
+            df = fixed_effect_plm$df.residual,
+            lower.tail = FALSE
+        )
+    )
+
+fixed_clustered_lfe <- fatality %>%
+    felm(
+        fatality_rate ~ beertax | state,
+        cluster = "state",
+        data = .
+    ) %>%
+    tidy() %>%
+    mutate(category = "fixed effects with lfe")
+
+fixed_clustered_lfe %>%
+    bind_rows(fixed_clustered_plm) %>%
+    print_kable(title = "Fixed effect in standard packages")
+```
+
+# DiD
+
+## Pre-trends
+
+Based on the figure, the parallel trend assumption may not hold, as we can see that the crime rates in Muslim/Jewish neighborhoods experienced two episodes of first decreasing, then increasing again, before increasing prior to the intervention. However, the Non Muslim/Jewish only experienced one episodes.
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-cap: "Pre-trends test"
+cartheft <- import(
+    "E:/OneDrive - HKUST Connect/assignment/assignment3/cartheft.dta",
+    setclass = "tibble"
+) %>%
+    mutate(treatment = if_else(distance > 0, 0, 1))
+
+cartheft %>%
+    group_by(month, treatment, postattack) %>%
+    summarise(mean = mean(cartheft)) %>%
+    ggplot(
+        aes(x = month, y = mean)
+    ) +
+    geom_line(
+        aes(group = treatment, color = as.factor(treatment)),
+        linewidth = 1.2,
+        linetype = "twodash"
+    ) +
+    geom_vline(
+        xintercept = 8,
+        linetype = "dotdash",
+        linewidth = 1,
+        color = "#8E8E93"
+    ) +
+    ggthemes::theme_hc() +
+    xlab("Month") +
+    ylab("Mean crime rates") +
+    theme(
+        legend.position = "none"
+    ) +
+    geom_text(
+        x = 10,
+        y = 0.064,
+        label = "Muslim/Jewish",
+        size = 3.6,
+        fontface = "italic"
+    ) +
+    geom_text(
+        x = 10,
+        y = 0.112,
+        label = "Non Muslim/Jewish",
+        size = 3.6,
+        fontface = "italic"
+    )
+```
+
+## DiD as a linear regression with interaction
+
+```{r}
+#| message: false
+#| warning: false
+did_interaction <- cartheft %>%
+    lm(
+        cartheft ~ treatment + postattack + treatment * postattack,
+        data = .
+    ) %>%
+    tidy() %>%
+    slice(4) %>%
+    mutate(term = "Same-Block Police")
+
+did_interaction %>%
+    print_kable(., title = "linear regression with interaction")
+```
+
+## DiD asd fixed effect
+
+```{r}
+#| message: false
+#| warning: false
+did_fixed <- cartheft %>%
+    felm(
+        cartheft ~ treatment * postattack | blockid + month,
+        data = .
+    ) %>%
+    tidy() %>%
+    slice(3) %>%
+    mutate(term = "Same-Block * Postattack")
+
+did_fixed %>%
+    print_kable(title = "Two way fixed effect model")
+```
+
+## Time-invariant variables in fixed effect regressions
+
+We cannot estimate the coefficient for time-invariant variables since they are absorbed by the individual fixed effects.
+
+```{r}
+#| message: false
+#| warning: false
+did_fixed_invariant <- cartheft %>%
+    felm(
+        cartheft ~ treatment * postattack + bank | blockid + month,
+        data = .
+    ) %>%
+    tidy() %>%
+    slice(3:4) %>%
+    mutate(term = c("Bank", "Same-Block * Postattack"))
+
+did_fixed_invariant %>%
+    print_kable(title = "Time-invariant variables in regression")
+```
+
+# Instrumental Variable
+
+```{=tex}
+\begin{align*}
+\log(wage) = \beta_{0} + \beta_{1}educ
+\end{align*}
+```
+```{=tex}
+\begin{align*}                
+educ = \gamma_{0} + \gamma_{1}educ
+\end{align*}
+```
+## IV estimate
+
+The IV estimator is larger than the OLS estimator. Since in this study, IV is used to address endogeneity by providing a source of variation in the predictor variable that is independent of the error term. In that case, IV estimate accounts for endogeneity and provides a more reliable estimate of the true causal effect of the predictor variable on the outcome variable. The OLS estimate, on the other hand, may be biased and inconsistent in the presence of endogeneity, leading to an underestimate of the true effect size.
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-cap: "Directed Acyclic Graphs"
+dag <- tribble(
+    ~name, ~label, ~x, ~y,
+    "educ", "Educ", 4, 1,
+    "wage", "Wage", 5, 1,
+    "e", "Confounders", 4.5, 1.5,
+    "Z", "Instrumental Variable", 3, 1
+)
+
+node_labels <- dag$label
+names(node_labels) <- dag$name
+
+status_colors <- c(
+    exposure = "#00BFFF",
+    outcome = "#FF7F50",
+    latent = "#D3D3D3"
+)
+
+dagify(
+    wage ~ educ + e,
+    educ ~ e,
+    educ ~ Z,
+    exposure = "educ",
+    outcome = "wage",
+    latent = "e",
+    coords = dag,
+    labels = node_labels
+) %>%
+    tidy_dagitty() %>%
+    node_status() %>%
+    ggplot(aes(x = x, y = y, xend = xend, yend = yend)) +
+    geom_dag_edges() +
+    geom_dag_point(aes(color = status)) +
+    geom_dag_label_repel(
+        aes(label = label, fill = status),
+        color = "white",
+        fontface = "bold"
+    ) +
+    scale_color_manual(values = status_colors, na.value = "grey20") +
+    scale_fill_manual(values = status_colors, na.value = "grey20") +
+    guides(color = FALSE, fill = FALSE) +
+    theme_dag()
+```
+
+```{r}
+#| message: false
+#| warning: false
+card <- import(
+    "E:/OneDrive - HKUST Connect/assignment/assignment3/card.csv",
+    setclass = "tibble"
+)
+
+ols <- card %>%
+    lm(
+        lwage ~ educ,
+        data = .
+    ) %>%
+    coeftest(vcovHC, "HC1") %>%
+    tidy() %>%
+    slice(2) %>%
+    mutate(method = "OLS with robust std.error")
+
+iv <- card %>%
+    ivreg(
+        lwage ~ educ | nearc4,
+        data = .
+    ) %>%
+    coeftest(vcovHC, "HC1") %>%
+    tidy() %>%
+    slice(2) %>%
+    mutate(method = "IV with robust std.error")
+
+bind_rows(ols, iv) %>%
+    print_kable(title = "Comparison between OLS and IV")
+```
+
+## Manual 2SLS
+
+```{r}
+#| message: false
+#| warning: false
+first_stage <- card %>%
+    lm(
+        educ ~ nearc4,
+        data = .
+    )
+
+manual <- card %>%
+    mutate(educ = predict(first_stage)) %>%
+    lm(
+        lwage ~ educ,
+        data = .
+    ) %>%
+    coeftest(vcovHC, "HC1") %>%
+    tidy() %>%
+    slice(2) %>%
+    mutate(method = "Manual 2SLS with robust std.error")
+
+bind_rows(manual, iv, ols) %>%
+    print_kable(title = "Comparison between OLS, IV and manual 2SLS")
+```
+
+## Weak instrument
+
+The F statistics from the first-stage regression is larger than 10.
+
+```{r}
+#| message: false
+#| warning: false
+waldtest(
+    lm(lwage ~ educ + nearc4, card),
+    lm(lwage ~ educ, card)
+) %>%
+    tidy() %>%
+    rename(F.statistic = statistic) %>%
+    print_kable(title = "Weak instrument test")
+```
+
+## Interpretation of effect
+
+-   Compliers are the individuals whose decision to attend college is influenced by the instrumental variable. In this study, compliers are the students who would attend college if they lived close to one and would not attend college if they lived far away. These students' decisions are directly impacted by the geographical distance to college.
+-   Always-takers are the individuals who would attend college regardless of the geographical distance. These students would pursue higher education even if they lived far away from a college.
+
+# Sharp RD
+
+## RD plot
+
+We can observe a clear difference around the cutoff.
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-cap: "Raw RD plot"
+senate <- import(
+    "E:/OneDrive - HKUST Connect/assignment/assignment3/senate.csv",
+    setclass = "tibble"
+) %>%
+    mutate(cutoff = if_else(margin > 0, 1, 0))
+
+senate %>% 
+    mutate(across(everything(), ~ round(., 2))) %>% 
+    DT::datatable()
+
+senate %>%
+    ggplot(aes(x = margin, y = vote, color = as.factor(cutoff))) +
+    geom_point(
+        size = 1,
+        alpha = 0.5,
+        position = position_jitter(
+            width = 0,
+            height = 0.25
+        )
+    ) +
+    geom_smooth(
+        data = filter(senate, margin > 0),
+        aes(x = margin, y = vote),
+        method = "lm",
+        color = "#8E8E93"
+    ) +
+    geom_smooth(
+        data = filter(senate, margin < 0),
+        aes(x = margin, y = vote),
+        method = "lm",
+        color = "#8E8E93"
+    ) +
+    scale_color_manual(values = c("#FF7F50", "#00BFFF")) +
+    geom_vline(
+        xintercept = 0,
+        linetype = "dotdash",
+        linewidth = 1
+    ) +
+    ggthemes::theme_hc() +
+    theme(
+        legend.position = "none"
+    ) +
+    xlab("Winning margin of a Democratic party senator") +
+    ylab("Share of vote of the senator in election")
+```
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-cap: "Binned RD plot"
+rdplot(
+    y = senate$vote,
+    x = senate$margin,
+    nbins = 10,
+    x.label = "Winning margin of a Democratic party senator",
+    y.label = "Share of vote of the senator in election",
+    title = ""
+)
+```
+
+## Density Test
+
+```{r}
+#| message: false
+#| warning: false
+#| fig-cap: "Density Test"
+density_plot <- rddensity(
+    senate$margin,
+    c = 0
+) %>%
+    rdplotdensity(
+        rdd = .,
+        X = senate$margin,
+        type = "both"
+    ) %>%
+    pluck("Estplot")
+```
+
+## RD bandwidth selection
+
+The obtained bandwidth is 24.969. We estimate the RD effect using three different bandwidth values (ideal, twice the ideal, and half of the ideal) to determine if the value is appropriate. As we can see, the coefficients change substantially. It is considered a big bandwidth since it includes more observations in our analysis.
+
+```{r}
+#| message: false
+#| warning: false
+rdbwselect(
+    y = senate$vote,
+    x = senate$margin,
+    c = 0,
+    p = 3,
+    kernel = "triangular",
+    bwselect = "mserd"
+) %>%
+    pluck("bws") %>%
+    as_tibble() %>%
+    set_names(
+        c("BW est left", "BW est right", "BW bias left", "BW bias right")
+    ) %>%
+    print_kable(title = "RD bandwidth selection")
+```
+
+```{r}
+#| message: false
+#| warning: false
+rd_models <- c(24.969, 24.969 * 2, 24.969 / 2) %>%
+    map(~ rdrobust(
+        y = senate$vote,
+        x = senate$margin,
+        p = 3,
+        h = .
+    ))
+
+extract_se_es <- \(x) {
+    tibble(
+        "Estimate" = pluck(x, "Estimate")[1],
+        "Se" = pluck(x, "se")[1],
+        "P-Value" = pluck(x, "pv")[1]
+    )
+}
+
+rd_models %>%
+    map_dfr(extract_se_es) %>%
+    mutate(
+        Bandwidth = c(
+            "24.969 (ideal)",
+            "49.938 (twice)",
+            "12.485 (half)"
+        ),
+        .before = 1
+    ) %>%
+    print_kable(title = "Sensitivity analysis using different bandwidths")
+```
+
+## Estimate Sharp RD treatment effect
+
+The model result shows that there is an incumbency advantage.
+
+```{r}
+#| message: false
+#| warning: false
+sharp_rd <- rdrobust(
+    y = senate$vote,
+    x = senate$margin,
+    h = 24.96899,
+    p = 3
+)
+
+tibble(
+    "Estimate" = pluck(sharp_rd, "Estimate")[1],
+    "Se" = pluck(sharp_rd, "se")[1],
+    "P-Value" = pluck(sharp_rd, "pv")[1]
+) %>%
+    print_kable(title = "Sharp RD treatment effect")
+```
+
+## Varying orders of polynomial regression
+
+Models with different bandwidth all support the same conclusion.
+
+```{r}
+#| message: false
+#| warning: false
+c(1:4) %>%
+    map(~ rdrobust(
+        y = senate$vote,
+        x = senate$margin,
+        p = .,
+        h = 24.96899
+    )) %>%
+    map_dfr(extract_se_es) %>%
+    mutate(
+        `Local-polynomial` = 1:4,
+        .before = 1
+    ) %>%
+    print_kable("Varying orders of polynomial regression")
+```

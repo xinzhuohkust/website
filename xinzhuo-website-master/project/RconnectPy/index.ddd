@@ -1,0 +1,54 @@
+---
+title: "RconnectPy Package"
+date: "last-modified"
+author: Xinzhuo HUANG
+categories: [R Package]
+description: "An R package for easy installation and importing of python modules."
+code-fold: false
+feed: true
+cap-location: bottom
+---
+
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+```
+
+:::: {.grid}
+::: {.g-col-12 .g-col-md-8 style="text-align: left;"}
+## Overview {.unnumbered .unlisted}
+An R package for easy installation and importing of python modules.
+:::
+::: {.g-col-15 .g-col-md-4 style="text-align: center;"}
+<br>
+<br>
+<img src="RconnectPy.png" width="180">        
+:::
+::::
+
+## Installation
+```{r}
+#| eval: false
+remotes::install_github("xinzhuohkust/RconnectPy")
+```
+
+## Usage
+
+```{r}
+#| eval: false
+RconnectPy::where_py()
+```
+
+
+```{r}
+#| eval: false
+RconnectPy::install_py_packages(python, "pandas")
+```
+
+
+```{r}
+#| eval: false
+packages <- RconnectPy::import_py_packages("pandas", "selenium", "asent")
+```

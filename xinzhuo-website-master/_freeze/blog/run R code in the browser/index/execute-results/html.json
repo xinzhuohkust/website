@@ -1,0 +1,16 @@
+{
+  "hash": "a8397df56467f72fb04e01e47533bc2a",
+  "result": {
+    "markdown": "---\ntitle: \"Run R code In the Browser\"\ndate: \"JUN 10, 2023\"\ncategories: [webr]\ndescription: \"without the need for an R server to execute the code\"\ncode-fold: show\nfeed: true\ncap-location: bottom\ncitation: true\nwebr:\n    # packages: ['dplyr']\n    home-dir: 'dir'\n    show-startup-message: true\n    show-header-message: false\nfilters:\n  - webr\n---\n\n\n# Sample\n\n\n::: {.cell}\n\n```{.r .cell-code  code-fold=\"true\"}\nlibrary(ggplot2)\n\nmtcars |>\n    ggplot(aes(hp, mpg, colour = as.factor(am))) +\n    geom_point() +\n    geom_smooth(\n        method = \"lm\", \n        linetype = \"dashed\",\n        formula = y ~ x\n    ) +\n    theme_bw() +\n    theme(\n        panel.border = element_blank(),\n        legend.position = \"none\"\n    )+\n    scale_color_manual(values = c(\"#0870A5\", \"#DB444B\"))\n```\n\n::: {.cell-output-display}\n![](index_files/figure-html/unnamed-chunk-1-1.png){width=672}\n:::\n:::\n\n\n# Interactive R code editor\n\nLet's replicate the figure by running the code online. You can try different parameters yourself and run the code directly in the code area below.\n\n<br>\n\n**Base R**\n\n```{webr-r}\ncolors <- c(\"#0870A5\", \"#DB444B\")\n\nplot(\n    mtcars$hp,\n    mtcars$mpg,\n    xlab = \"hp\",\n    ylab = \"mpg\",\n    col = colors[factor(mtcars$am)]\n)\n\nabline(\n    lm(mtcars[mtcars$am == 1, ]$mpg ~ mtcars[mtcars$am == 1, ]$hp),\n    col = \"#DB444B\",\n    lwd = 2,\n    lty = 3\n)\n\nabline(\n    lm(mtcars[mtcars$am == 0, ]$mpg ~ mtcars[mtcars$am == 0, ]$hp),\n    col = \"#0870A5\",\n    lwd = 2,\n    lty = 3\n)\n```\n\n<br>\n\n**Tidy R**\n\n```{webr-r}\nwebr::install(\"ggplot2\") # will take 2 minutes to run\n```\n\n```{webr-r}\nlibrary(ggplot2)\n\nmtcars |>\n    ggplot(aes(hp, mpg, colour = as.factor(am))) +\n    geom_point() +\n    geom_smooth(\n        method = \"lm\", \n        linetype = \"dashed\",\n        formula = y ~ x\n    ) +\n    theme_bw() +\n    theme(\n        panel.border = element_blank(),\n        legend.position = \"none\"\n    ) +\n    scale_color_manual(values = c(\"#0870A5\", \"#DB444B\"))\n```\n\n<br>\n\n**Data Manipulation** with `dplyr`\n\n```{webr-r}\nwebr::install(\"dplyr\") # will take 1 minutes to run\n```\n\n```{webr-r}\nlibrary(dplyr)\n\nmtcars |>\n    group_by(am) %>% \n    summarise(mpg = mean(mpg))\n\nmtcars |>\n    rowwise() |>\n    summarise(mean = mean(c(mpg, disp, hp))) \n```\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

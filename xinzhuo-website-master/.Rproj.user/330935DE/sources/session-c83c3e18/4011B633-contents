@@ -1,0 +1,127 @@
+---
+comments: false
+---
+
+::: {.g-col-12 .g-col-md-8 style="text-align: center;"}
+<span style="font-size: 40px; font-weight: bold; font-family: Lora;">
+    Xinzhuo Huang 
+</span>
+
+:::
+
+::: {.g-col-6 .g-col-md-4 style="text-align: center;"}
+<a href="https://git.io/typing-svg"><img src="https://readme-typing-svg.herokuapp.com?font=Lora&pause=1000&color=040C10&center=true&vCenter=true&width=435&lines=Political+Science;Focus+on+China;R+%26+Python;" alt="Typing SVG" /></a>
+
+:::
+
+::: {.g-col-6 .g-col-md-4 style="text-align: center;"}
+<head>
+<style>
+  .download-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #f5f5f5;
+    color: #4F4F4F;
+    text-decoration: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    align: center
+    border-radius: 4px;
+  }
+  .download-button:hover {
+    background-color: #E0E0E0;
+  }
+</style>
+</head>
+<body>
+  <a href="https://raw.githubusercontent.com/xinzhuohkust/xinzhuo/ff0f45ebe89468091bc3fa6e6305f3e91a12ae57/cv_pdf.pdf" download class="download-button">Download PDF</a>
+</body>
+
+:::
+
+::: {.g-col-12 .g-col-md-8 style="text-align: left;"}
+## Education
+
+
+
+- **_MPhil_ in Social Science**, **currently enrolled**      
+  ![](university.png){width=5%}*Hong Kong University of Science and Technology, HongKong*        
+  ![](professor.png){width=5%}*Under the guidance of [Prof. Cai Yongshun](https://sosc.hkust.edu.hk/people/yongshun-cai) and [Prof. Zhang Han](https://sosc.hkust.edu.hk/people/han-zhang)*            
+  ![](award.png){width=5.5%}*Full Scholarships*
+
+- **_MSc_ in Global China Studies**, **2022**     
+  ![](university.png){width=5%}*Hong Kong University of Science and Technology, HongKong*            
+  ![](award.png){width=5.5%}*Dean's Award*
+
+- **_LLB_ in Political Science and Law**, **2020**        
+  ![](university.png){width=5%}*East China University of Political Science and Law, China*           
+  ![](award.png){width=5.5%}*Outstanding Graduation Thesis Award*           
+  ![](award.png){width=5.5%}*Outstanding Graduate Award*        
+:::
+
+::: {.g-col-12 .g-col-md-8 style="text-align: left;"}
+## Working Paper
+
+- **The Temporal and Spatial Heterogeneity of State Repression: Evidence from Causal Tree**
+  - Utilized a causal tree to estimate heterogeneous effects.                                
+<br>
+
+- **Upward Targeting and Authoritarian Responsiveness in China**, **In Progress** 
+  - Created Word Embeddings based on massive peition data in China.
+<br>
+
+:::
+
+::: {.g-col-12 .g-col-md-8 style="text-align: left;"}
+
+## Research Project
+
+- **Polarized Agenda-Setting by Global News Media: Salience and Valence of China News**
+  - 2023 Annual Meeting of the American Political Science Association (Los Angeles, USA).
+  - Co-author with Prof [Jean Hong](http://hongjiyeon.com/) from University of Michigan and Prof [Yusaku Horiuchi](https://horiuchi.org/) from Dartmouth College.                                       
+<br>
+
+- **Propaganda and Petition in China's Zero-Covid Campaign**, **In Progress**
+  - 2023 Young Scholars Conference in UC San Diego (CA, USA).
+  - Co-author with Dr [Hongshen Zhu](https://app.getsphere.com/hongshen-zhu) from University of Pennsylvania and Prof Haibing Yan from ECUPL.
+
+:::
+
+::: {.g-col-12 .g-col-md-8 style="text-align: left;"}
+## Experience
+
+- **Reseach Assistant for Prof [Jean Hong](http://hongjiyeon.com/) from University of Michigan**, **2022**
+<br>
+
+- **Reseach Assistant for Prof [Yimin Lin](https://facultyprofiles.hkust.edu.hk/profiles.php?profile=yimin-lin-soyimin) from HKUST**, **2022**
+
+:::
+
+::: {.g-col-12 .g-col-md-8 style="text-align: left;"}
+
+## Programming
+<img align='left' src="programmer.gif" width="350">
+<br>
+- **R**, **Advanced**<br>
+- **Quarto/Rmarkdown**, **Advanced**<br>
+- **Python**, **Advanced**<br>
+- **SQL**, **Beginner**<br>
+- **Julia**, **Beginner**<br>
+- **Javascript**, **Beginner**
+
+:::
+
+--------------------------------------------------------------------------------
+
+::: {.g-col-12 .g-col-md-8 style="text-align: left;"}
+
+#### Real-time coding activity 
+
+
+<img src="https://camo.githubusercontent.com/4f5c57e1d3cdf967de06d589d9b911c62d0ba8c96e902deffde2eda1d13f850e/687474703a2f2f696d672e736869656c64732e696f2f62616467652f436f646525323054696d652d3125324330383125323068727325323034382532306d696e732d626c7565" alt="Code Time" data-canonical-src="http://img.shields.io/badge/Code%20Time-1%2C081%20hrs%2048%20mins-blue" style="max-width: 100%;"> Since Feb 2023
+
+<a href="https://wakatime.com"><img src="https://wakatime.com/share/@xhuangcb/1f9c4a36-309d-4adc-9488-32406dad5d9d.png" /></a>
+
+:::
+

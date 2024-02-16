@@ -1,0 +1,122 @@
+---
+title: "Vecotr Search Engine"
+date: "Nov 5, 2023"
+categories: [R, Python, Embedding, BERT]
+description: "based on pretrained sentence embeddings"
+code-fold: show
+feed: true
+#code-summary: "Show the code"
+cap-location: bottom
+citation: 
+    author: Huang Xinzhuo
+---
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+```
+![](embedding.png){fig-align="center" width="300"}
+
+Let's utilize a pre-trained sentence model to convert text into sentence vectors, then perfrom vector search. We will use CUDA to accerate the process. I wil call Python in R through `reticulate`.
+```{r}
+#| code-summary: Package Mangement
+#| code-fold: true
+require(pacman)
+p_load(reticulate, tidyverse, tictoc)
+```
+
+Call Python in R and check if CUDA is available.
+```{r}
+reticulate::use_python("C:\\Users\\xhuangcb\\anaconda3\\envs\\pytorch_gpu\\python.exe") 
+
+torch <- reticulate::import("torch")
+
+torch$cuda$is_available()
+```
+
+Utilize pretrained model [GanymedeNil/text2vec-large-chinese](https://huggingface.co/GanymedeNil/text2vec-large-chinese).
+```{r}
+text2vec <- reticulate::import("text2vec")
+
+model <- text2vec$SentenceModel("GanymedeNil/text2vec-large-chinese")
+```
+
+Sample data is from Chinese court document. Let's vonvert the text into a 1024-dimensional vector. It takes 24 seconds to process 2000 court  documents, using a RTX 3080.
+
+```{r}
+#| eval: false
+judgements <- rio::import("D:/OneDrive - HKUST Connect/search_engine/legal.csv", setclass = "tibble")
+
+tic()
+vec <- judgements %>% 
+    mutate(vecotr = model$encode(content))
+toc()
+```
+
+```{r}
+#| echo: false
+print("24.27 sec elapsed")
+```
+
+```{r}
+#| eval: false
+vec$vector <- vec$vector %>% 
+    as_tibble()
+
+vec <- vec %>%  
+    nest(data = vector) %>% 
+    mutate(data = map(data, ~ unlist(.) |> unname()))
+```
+
+```{r}
+#| echo: false
+vec <- read_rds("E:/OneDrive - HKUST Connect/search_engine/sentence_vector.Rds")
+
+vec$vector %>% 
+    as_tibble() %>% 
+    head(10)
+```
+<br>
+Build a vector search engine.
+
+```{r}
+#| eval: false
+annoy <- reticulate::import("annoy")
+
+index <- annoy$AnnoyIndex(1024L, "angular")
+
+add_item <- \(x, y) {
+    index$add_item(x, y)
+}
+
+walk2(
+    .x = 1L:1895L,
+    .y = vec$data,
+    possibly(add_item)
+)
+
+index$build(10L)
+
+index$save("E:/OneDrive - HKUST Connect/search_engine/search_index.ann")
+```
+
+```{r}
+#| eval: false
+search_engine <- \(df, keyword, top = 10L, ann = "E:/OneDrive - HKUST Connect/search_engine/search_index.ann") {
+    search$load(ann) 
+
+    indexing <- search$get_nns_by_vector(model$encode(keyword), 10L)
+
+    df %>% 
+        slice(indexing)
+
+}
+
+search_engine(df = vec, keyword = "土地所有权纠纷")
+```
+```{r}
+#| echo: false
+read_rds("E:/OneDrive - HKUST Connect/search_engine/sentence_vector_result.Rds") %>% 
+    select(title)
+```

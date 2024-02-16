@@ -1,0 +1,77 @@
+---
+title: "sentimentRPy Package"
+date: "Jun 10, 2023"
+categories: [R Package]
+description: "An R package for sentence-level and word-level sentiment analysis."
+code-fold: false
+feed: true
+cap-location: bottom
+---
+
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+```
+
+:::: {.grid}
+::: {.g-col-12 .g-col-md-8 style="text-align: left;"}
+## Overview {.unnumbered .unlisted}
+An R package for sentence-level and word-level sentiment analysis. Support vectorization, multithreading and is robust to errors.
+:::
+::: {.g-col-15 .g-col-md-4 style="text-align: center;"}
+<br>
+<br>
+<img src="sentiment.png" width="180">        
+:::
+::::
+
+## Installation
+```{r}
+#| eval: false
+remotes::install_github("xinzhuohkust/sentimentRPy")
+```
+
+## Usage
+
+### R
+
+word level
+```{r}
+sentimentRPy::get_sentimentR(
+    text = c("I am happy", "I am sad"),
+    method = "word"
+    )
+```
+
+Sentence level which will take the **contrast** and **negation** into account. `sd` will be provided when there are multiple sentences. The underlying function is from `sentimentr`.
+
+```{r}
+sentimentRPy::get_sentimentR(
+    text = "I am not happy, but I am also not unhappy.",
+    method = "sentence"
+    )
+```
+
+Multithreading model using all available CPU cores.
+```{r}
+#| eval: false
+sentimentRPy::get_sentimentR(
+    text = a large corpus,
+    method = "sentence", # or word
+    multisession = TRUE
+    )
+```
+
+### Python
+
+Python setup
+```{r}
+asent <- sentimentRPy::asent_setup(python = "C:\\Users\\xhuangcb\\anaconda3\\envs\\pytorch_gpu\\python.exe")
+```
+
+Sentence level sentiment analysis using `asent` in Python
+```{r}
+sentimentRPy::get_sentimentPy("I am not happy, but I am also not unhappy.")
+```

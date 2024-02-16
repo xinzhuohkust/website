@@ -1,0 +1,145 @@
+---
+title: "Automatic Web Scraper"
+date: "Nov 2, 2023"
+categories: [R, Web Scraping, Github Actionsgit ]
+description: "using R and GitHub Actions"
+code-fold: show
+feed: true
+cap-location: bottom
+execute: 
+  warning: false
+  message: false
+citation: 
+    author: Huang Xinzhuo
+---
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+```
+![](githubactions.png){fig-align="center" width="300"}
+
+
+Let's create a automatic web scraper using R and Github actions to scrape real-time Weibo hot searches (akin to Twitter).
+
+## Github Actions workflow
+
+Set up a GitHub Actions workflow to create a scheduled task that launches every 30 minutes.
+
+```{r}
+#| eval: false
+on:
+  schedule:
+   - cron: '*/30 * * * *' 
+
+jobs:
+  update-report:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        
+      - name: Check out repository
+        uses: actions/checkout@v3
+      
+      - uses: actions/cache@v3 # Cache packages so won't be compiled everytime job is run
+        with:
+          path: ~/.local/share/renv
+          key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-renv-
+
+      - name: Install packages
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::tidyverse
+            any::rio
+            any::rvest
+            any::httr2
+            any::jsonlite
+            any::pacman
+            
+      - name: Web Scraping
+        run: source("weibo_realtime.R")
+        shell: Rscript {0}
+        
+      - name: Commit files
+        run: |
+          git config --local user.name actions-user
+          git config --local user.email "actions@github.com"
+          git add data/*
+          git commit -am "GH ACTION Headlines $(date)"
+          git push origin main
+        env:
+          REPO_KEY: ${{secrets.GITHUB_TOKEN}}
+          username: github-actions
+```
+
+Deploy this web scraper to GitHub, enabling it to automatically scrape Weibo hot searches.
+```{r}
+#| eval: false
+library("pacman")
+p_load(tidyverse, httr2, rvest)
+
+get_hot_item <- possibly(
+  insistently(
+    \() {
+      result <- "sample_website" %>%
+        request() %>%
+        req_timeout(1000) %>%
+        req_headers(
+          "User-Agent" = "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+          "Cookie" = "SUB=_2AkMXxWiSf8NxqwFRmPoWz2nlbop1zwvEieKhmZlJJRMxHRl-yT9jqlAItRB6PEVGfTP09XmsX_7CR2H1OUv6b-f-1bJl;SUBP=0033WrSXqPxfM72-Ws9jqgMF55529P9D9WWENAjmKyIZz1AWjDi68mRw"
+        ) %>%
+        req_retry(
+          max_tries = 5,
+          max_seconds = 60,
+          backoff = ~ 2
+        ) %>%
+        req_perform() %>%
+        pluck("body") %>%
+        read_html() %>%
+        html_element("tbody") %>%
+        html_table()
+      
+      return(result)
+    },
+    rate = rate_backoff(
+      pause_base = 3,
+      pause_cap = 60,
+      max_times = 3,
+      jitter = TRUE
+    ),
+    quiet = FALSE
+  ),
+  otherwise = "error!"
+)
+
+get_hot_item()
+```
+
+```{r}
+#| eval: false
+#| echo: false
+trends_weibo <- get_hot_item()
+
+weibo <- trends_weibo %>% 
+    select(2:3) %>% 
+    mutate(
+        `Hot Index` = str_extract(X2, "\\s\\d+") |> as.numeric(),
+        Search = str_extract(X2, ".+?(?=\\\n)")
+    ) %>% 
+    select(4, 3) %>% 
+    mutate(across(everything(), str_trim))
+
+write_rds(weibo, "cached_data/weibo.Rds")
+```
+
+```{r}
+#| echo: false
+DT::datatable(readRDS("E:/OneDrive - HKUST Connect/personal website/main/cached_data/weibo.Rds"))
+```

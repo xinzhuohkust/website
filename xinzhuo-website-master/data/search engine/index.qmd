@@ -1,0 +1,43 @@
+---
+title: "Data Search Engine"
+date: Jul 24, 2023
+author:
+  - name: Xinzhuo Huang
+    orcid: 0009-0007-6448-5114
+    email: xhuangcb@connect.ust.hk
+    affiliations:
+      - name: HKUST SOSC
+page-layout: full
+toc: false
+categories: [Shiny, Search Engine]
+description: "A web app powered by Shiny"
+---
+
+# Data Search Engine
+
+A web app powered by [<img src="https://community.rstudio.com/uploads/default/optimized/3X/a/6/a62322c626a8db3b50af56ea64e8627575394dbc_2_862x998.png" alt="Shiny" width="4%" align="middle"/>](https://huangxinzhuo.shinyapps.io/search-engine/)
+
+<br>
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="styles.scss">
+
+```{=html}
+<script src="darkmode.js"></script>
+```
+<title>Embed Iframe with Background Color and Dark Mode</title>
+
+</head>
+
+<body>
+
+<iframe id="custom-iframe" src="https://huangxinzhuo.shinyapps.io/search-engine/#" width="1200" height="700">
+
+</iframe>
+
+</body>

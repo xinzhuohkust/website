@@ -1,0 +1,186 @@
+---
+title: "Sentence Level Sentiment Analysis"
+date: "Feb 20 2023"
+categories: [R, Python, Sentiment Analysis, Reticulate]
+description: "by calling Python in R"
+code-fold: show
+feed: true
+---
+
+```{=html}
+<style>
+body {text-align: justify}
+</style>
+```
+![](images/sentiment.png){fig-align="center" width="500"}
+
+Text analysis enables the identification and extraction of sentiment information from text. By leveraging tools such as `asent`, `sentimentr`, and basic sentiment lexicons, it is possible to construct a sentiment classifier that can estimate whether the underlying sentiment of a given text is positive, negative, or neutral.
+
+# Pacakage Management
+
+Using `pacman` to manage package dependencies.
+
+```{r message=FALSE, warning=FALSE}
+require(pacman)
+p_load(dplyr, magrittr, furrr, purrr, DT, readr, stringr, furrr, purrr, sentimentr, tidyfst, tidyr, textclean, tidytext, tibble, kableExtra)
+```
+
+# Load Data
+
+Our demonstration data are sourced from a news dataset collected from Factiva, consisting of 500 observations. The "link" refers to the links of these news articles. These news articles have been translated into English and undergone thorough text cleaning. Please find the data [here.](https://drive.google.com/file/d/1JKj8rDatjionAYN1EhzFnSNBRNQkay0C/view){.external target="_blank"}
+
+```{r}
+data <- read_rds("E:/OneDrive - HKUST Connect/SOSC/paper_with_jean/group_meeting/fifth/data_for_analysis_share.Rds")
+glimpse(data)
+```
+
+# Using asent
+
+To use `asent`, a Python package in R, you need `reticulate` package to integrate Python code in your R script. You can change your python interpreter here:
+
+![](images/python_in_R.png){width="550"}
+
+## install python packages:
+
+Call python in R.
+
+```{r message=FALSE}
+reticulate::use_python("C:\\Users\\xhuangcb\\anaconda3\\envs\\pytorch_gpu\\python.exe") # call python in R
+```
+
+Then:
+
+```{r}
+#| echo: false
+tribble(
+    ~"Tpying", ~"To install",
+    "!pip install spacy", "spacy",
+    "!pip install asent", "asent",
+    "!pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.5.0/en_core_web_lg-3.5.0-py3-none-any.whl", "pre-trained model"
+) %>% 
+   kbl() %>%
+   kable_styling()
+```
+
+![](images/callpythoninr.png){width="550"}
+
+## from OOP to FP
+
+Python is an object-oriented programming (OOP) language, and it is possible to convert Python classes into functions in R, which mainly support functional programming (FP).
+
+```{r message=FALSE}
+spacy <- reticulate::import("spacy") # load spacy
+
+asent <- reticulate::import("asent") # load asent
+
+nlp <- spacy$load("en_core_web_lg") # load pre-trained model
+
+nlp$add_pipe("asent_en_v1") # add asent pipe
+
+nlp_safe <- possibly(.f = nlp, otherwise = "error!") # error handling
+
+get_polarity <- nlp_safe("sentiment")$get_extension("polarity")[[3]] # load python function
+
+get_sentiment_asent <- \(x) {
+    result <- nlp_safe(x) %>%
+        get_polarity() %>%
+        print() %>%
+        capture.output() %>%
+        str_extract_all("-?0\\.\\d+") %>%
+        unlist() %>%
+        as.numeric()
+
+    names(result) <- c("neg", "neu", "pos", "compound")
+
+    return(result)
+}
+```
+
+Try our function:
+
+```{r}
+get_sentiment_asent(data$cleaned_text[1])
+```
+
+It is an analytical process of asent:
+
+![](images/result-01.png){width="680"}
+
+# Using sentimentr
+
+Our function using `sentimentr`.
+
+```{r}
+get_sentences_safe <- possibly(.f = get_sentences, otherwise = "error!") # sentences cutter
+
+sentiment_by_safe <- possibly(.f = sentiment_by, otherwise = "error!") # sentiment classifier
+
+get_sentiemnt_sentimentr <- \(x) {
+    x %>%
+        get_sentences_safe() %>%
+        sentiment_by_safe() %>%
+        unlist()
+}
+```
+
+Try it:
+
+```{r}
+get_sentiemnt_sentimentr(data$cleaned_text[1])
+```
+
+# Word-level
+
+```{r}
+cal_sentiment <- \(x) {
+    x %>%
+        filter(value == 0) %>%
+        pull(value) %>%
+        length() -> neu
+
+    x %>%
+        filter(value > 0) %>%
+        pull(value) %>%
+        sum() -> pos
+
+    x %>%
+        filter(value < 0) %>%
+        pull(value) %>%
+        sum() -> neg
+    result <- c(neu, pos, neg)
+
+    names(result) <- c("neu", "pos", "neg")
+
+    return(result)
+}
+
+get_sentiment_word <- \(x) {
+    result <- x %>%
+        tibble(text = ., id = 1) %>%
+        unnest_tokens(word, text) %>%
+        filter(!word %in% stopwords::stopwords(source = "stopwords-iso")) %>%
+        left_join(get_sentiments("afinn")) %>% # you can try different dict
+        replace_na(list(value = 0)) %>%
+        nest(data = !id) %>%
+        mutate(sentiment = map(data, cal_sentiment)) %>%
+        pull(sentiment) %>%
+        unlist()
+
+    return(result)
+}
+```
+
+Try it:
+
+```{r message=FALSE}
+get_sentiment_word(data$cleaned_text[1])
+```
+
+# Using these functions in loop
+
+You can use these function with `for` loop or just use `map`to apply a them to each element of a vector or list in tibble.
+
+```{r message=FALSE, eval=FALSE}
+data <- data %>%
+    mutate(sentiment_asent = map(cleaned_text, get_sentiment_asent, .progress = TRUE))
+```

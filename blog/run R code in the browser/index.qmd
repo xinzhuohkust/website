@@ -1,0 +1,120 @@
+---
+title: "Run R code In the Browser"
+date: "JUN 10, 2023"
+categories: [webr]
+description: "without the need for an R server to execute the code"
+code-fold: show
+feed: true
+cap-location: bottom
+citation: true
+webr:
+    # packages: ['dplyr']
+    home-dir: 'dir'
+    show-startup-message: true
+    show-header-message: false
+filters:
+  - webr
+---
+
+# Sample
+
+```{r}
+#| code-fold: true
+library(ggplot2)
+
+mtcars |>
+    ggplot(aes(hp, mpg, colour = as.factor(am))) +
+    geom_point() +
+    geom_smooth(
+        method = "lm", 
+        linetype = "dashed",
+        formula = y ~ x
+    ) +
+    theme_bw() +
+    theme(
+        panel.border = element_blank(),
+        legend.position = "none"
+    )+
+    scale_color_manual(values = c("#0870A5", "#DB444B"))
+```
+
+# Interactive R code editor
+
+Let's replicate the figure by running the code online. You can try different parameters yourself and run the code directly in the code area below.
+
+<br>
+
+**Base R**
+
+```{webr-r}
+colors <- c("#0870A5", "#DB444B")
+
+plot(
+    mtcars$hp,
+    mtcars$mpg,
+    xlab = "hp",
+    ylab = "mpg",
+    col = colors[factor(mtcars$am)]
+)
+
+abline(
+    lm(mtcars[mtcars$am == 1, ]$mpg ~ mtcars[mtcars$am == 1, ]$hp),
+    col = "#DB444B",
+    lwd = 2,
+    lty = 3
+)
+
+abline(
+    lm(mtcars[mtcars$am == 0, ]$mpg ~ mtcars[mtcars$am == 0, ]$hp),
+    col = "#0870A5",
+    lwd = 2,
+    lty = 3
+)
+```
+
+<br>
+
+**Tidy R**
+
+```{webr-r}
+webr::install("ggplot2") # will take 2 minutes to run
+```
+
+```{webr-r}
+library(ggplot2)
+
+mtcars |>
+    ggplot(aes(hp, mpg, colour = as.factor(am))) +
+    geom_point() +
+    geom_smooth(
+        method = "lm", 
+        linetype = "dashed",
+        formula = y ~ x
+    ) +
+    theme_bw() +
+    theme(
+        panel.border = element_blank(),
+        legend.position = "none"
+    ) +
+    scale_color_manual(values = c("#0870A5", "#DB444B"))
+```
+
+<br>
+
+**Data Manipulation** with `dplyr`
+
+```{webr-r}
+webr::install("dplyr") # will take 1 minutes to run
+```
+
+```{webr-r}
+library(dplyr)
+
+mtcars |>
+    group_by(am) %>% 
+    summarise(mpg = mean(mpg))
+
+mtcars |>
+    rowwise() |>
+    summarise(mean = mean(c(mpg, disp, hp))) 
+```

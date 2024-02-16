@@ -1,0 +1,111 @@
+---
+title: "**Xinzhuo Huang**"
+author: ""
+listing: 
+  contents: posts
+  sort: "date desc"
+  type: default
+  feed: true
+image: png/photo.jpg
+comments: false
+date-modified: ""
+about:
+  id: edu-exp
+  template: solana
+  image-width: 9em
+  image-shape: round
+  links:
+    - text: "{{< iconify fa6-solid envelope >}}"
+      href: "mailto:xhuangcb@connect.ust.hk"
+    - text: "{{< iconify fa6-brands github >}}"
+      href: "https://github.com/xinzhuohkust"
+    - text: "{{< iconify fa6-brands twitter >}}"
+      href: "https://twitter.com/HsinchoH"
+    - text: "{{< iconify fa6-brands linkedin >}}"
+      href: "https://www.linkedin.com/in/xinzhuo-huang-5161011ba/"
+---
+
+::: {#edu-exp}
+:::
+
+<!-- Google tag (gtag.js) -->
+
+```{=html}
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-7HHBQV7LX3"></script>
+```
+```{=html}
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-7HHBQV7LX3');
+</script>
+```
+::: {style="text-align: justify;"}
+Hi, I'm Xinzhuo. I am currently an M.Phil. student at the [Hong Kong University of Science and Technology](https://sosc.hkust.edu.hk/node/613), under the guidance of [Prof. Cai Yongshun](https://sosc.hkust.edu.hk/people/yongshun-cai) and [Prof. Zhang Han](https://sosc.hkust.edu.hk/people/han-zhang).
+
+My research interests lie in the Chinese government and politics. I have worked in multiple levels of the Chinese government, providing me with a firsthand understanding of its operations.
+
+I am proficient in utilizing `R` and `Python` throughout all stages of data analysis, which is attributed to my participation and leadership in several real-world research projects.
+
+I have collected over one hundred million data points pertaining to China by web scraping from various websites and apps, including the largest collection of Chinese police administrative penalty documents to date, as well as petition and legal document data.
+
+Welcome to browse my [resume](/cv/), recent [blog posts](/blog/), [datasets](/data/), [research projects](/project), and [R packages](/project). Also, check out the [visualizations](/visualization/) based on real-world data.
+:::
+
+::: grid
+::: {.g-col-12 .g-col-md-8 style="text-align: left;"}
+## Education
+
+-   ***M.Phil.*** **in Social Science**, **currently enrolled**\
+    ![](png/university.png){width="5.5%"}*Hong Kong University of Science and Technology, Hong Kong*\
+    ![](png/award.png){width="6%"}*Full Scholarships*
+
+-   ***M.Sc.*** **in Global China Studies**, **2022**\
+    ![](png/university.png){width="5.5%"}*Hong Kong University of Science and Technology, Hong Kong*\
+    ![](png/award.png){width="6%"}*Dean's Award*
+
+-   ***LL.B.*** **in Political Science (major) and Law (minor)**, **2020**\
+    ![](png/university.png){width="5.5%"}*East China University of Political Science and Law, China*\
+    ![](png/award.png){width="6%"}*Outstanding Graduation Thesis Award*\
+    ![](png/award.png){width="6%"}*Outstanding Graduate Award*\
+:::
+
+::: {.g-col-12 .g-col-md-4 style="text-align: left;"}
+## Interests
+
+-   **Chinese Politics**
+    -   *responsiveness*
+    -   *social protest*
+-   **Application of ML**
+    -   *text analysis*
+    -   *causal inference*
+-   **Data Engineering**
+    -   *web scraping*
+    -   *data visualization*
+:::
+:::
+
+```{=html}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .hidden-non-clickable {
+            position: absolute;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="hidden-non-clickable">
+        <script type='text/javascript' id='clustrmaps' src='//cdn.clustrmaps.com/map_v2.js?cl=fdfdfd&w=70&t=n&d=xZ5N7O41jb8FCtvQIiC0y_H6QbZgte9z9WlfHIbXC9w&co=fdfdfd&ct=fdfdfd&cmo=fdfdfd&cmn=fdfdfd'></script>
+    </div>
+</body>
+</html>
+```

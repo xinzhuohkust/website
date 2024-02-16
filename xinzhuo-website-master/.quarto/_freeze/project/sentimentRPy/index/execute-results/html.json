@@ -1,0 +1,14 @@
+{
+  "hash": "b05272e745aa1866256a5dfb832c8736",
+  "result": {
+    "markdown": "---\ntitle: \"sentimentRPy Package\"\ndate: \"Jun 10, 2023\"\ncategories: [R Package]\ndescription: \"An R package for sentence-level and word-level sentiment analysis.\"\ncode-fold: false\nfeed: true\ncap-location: bottom\n---\n\n```{=html}\n<style>\nbody {text-align: justify}\n</style>\n```\n\n\n:::: {.grid}\n::: {.g-col-12 .g-col-md-8 style=\"text-align: left;\"}\n## Overview {.unnumbered .unlisted}\nAn R package for sentence-level and word-level sentiment analysis. Support vectorization, multithreading and is robust to errors.\n:::\n::: {.g-col-15 .g-col-md-4 style=\"text-align: center;\"}\n<br>\n<br>\n<img src=\"sentiment.png\" width=\"180\">        \n:::\n::::\n\n## Installation\n\n::: {.cell}\n\n```{.r .cell-code}\nremotes::install_github(\"xinzhuohkust/sentimentRPy\")\n```\n:::\n\n\n## Usage\n\n### R\n\nword level\n\n::: {.cell}\n\n```{.r .cell-code}\nsentimentRPy::get_sentimentR(\n    text = c(\"I am happy\", \"I am sad\"),\n    method = \"word\"\n    )\n```\n\n::: {.cell-output-display}\n<div class=\"kable-table\">\n\n|neu |pos |neg |\n|:---|:---|:---|\n|0   |3   |0   |\n|0   |0   |-2  |\n\n</div>\n:::\n:::\n\n\nSentence level which will take the **contrast** and **negation** into account. `sd` will be provided when there are multiple sentences. The underlying function is from `sentimentr`.\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsentimentRPy::get_sentimentR(\n    text = \"I am not happy, but I am also not unhappy.\",\n    method = \"sentence\"\n    )\n```\n\n::: {.cell-output-display}\n<div class=\"kable-table\">\n\n|sentiment         |sd |\n|:-----------------|:--|\n|0.296463530640786 |NA |\n\n</div>\n:::\n:::\n\n\nMultithreading model using all available CPU cores.\n\n::: {.cell}\n\n```{.r .cell-code}\nsentimentRPy::get_sentimentR(\n    text = a large corpus,\n    method = \"sentence\", # or word\n    multisession = TRUE\n    )\n```\n:::\n\n\n### Python\n\nPython setup\n\n::: {.cell}\n\n```{.r .cell-code}\nasent <- sentimentRPy::asent_setup(python = \"C:\\\\Users\\\\xhuangcb\\\\anaconda3\\\\envs\\\\pytorch_gpu\\\\python.exe\")\n```\n:::\n\n\nSentence level sentiment analysis using `asent` in Python\n\n::: {.cell}\n\n```{.r .cell-code}\nsentimentRPy::get_sentimentPy(\"I am not happy, but I am also not unhappy.\")\n```\n\n::: {.cell-output-display}\n<div class=\"kable-table\">\n\n|neg |neu   |pos   |compound |\n|:---|:-----|:-----|:--------|\n|0   |0.652 |0.348 |0.652    |\n\n</div>\n:::\n:::",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

@@ -1,0 +1,717 @@
+---
+page-layout: full
+comments: false
+title: "Visualization"
+subtitle: "With data from the real world"
+citation: 
+    author: Huang Xinzhuo
+date-modified: last-modified
+date: "Nov 21, 2023"
+---
+
+<br>
+
+## Surveillance
+
+In China, there are 2,734,921 companies related to surveillance, and our web scraper has recorded their detailed information.
+```{r}
+#| out-width: 100%
+#| eval: false
+require(pacman)
+p_load(showtext, ggspatial, viridis, scales, tidyverse, sf, fasterize, stars)
+
+font_add("Proxima", "E:\\OneDrive - HKUST Connect\\dataverse\\可视化\\Proxima Nova Extrabold.ttf")
+font_add("Proxima Head", "E:\\OneDrive - HKUST Connect\\dataverse\\可视化\\Publico Headline Web Bold.ttf")
+
+showtext_auto()
+
+colors <- c(
+    "#1380A1",
+    "#edae49",
+    "#66a182",
+    "#2e4057",
+    "#8d96a3",
+    "#d1495b"
+)
+
+ggplot() +
+    geom_sf(data = data_plot, aes(geometry = geometry, fill = total), color = "#FFFFFF") +
+    geom_sf(data = part4, aes(geometry = geometry), fill = NA, color = "#2e4057", size = 3) +
+    ggthemes::theme_map() +
+    viridis::scale_fill_viridis(
+        option = "A",
+        name = "Companies \nrelated to surveillance",
+        alpha = 0.8,
+        begin = 0,
+        end = 0.9,
+        direction = -1, # dark is lowest, yellow is highest
+        guide = guide_legend(
+            keyheight = unit(5, units = "mm"),
+            title.position = "top",
+            reverse = FALSE,
+            title.theme = element_text(family = "Proxima Head")
+        )
+    ) +
+    annotation_scale(
+        location = "tl",
+        bar_cols = c("grey60", "white"),
+        text_family = "Proxima Head"
+    ) +
+    annotation_north_arrow(
+        location = "tl",
+        which_north = "true",
+        pad_x = unit(0.1, "in"),
+        pad_y = unit(1.0, "in"),
+        style = ggspatial::north_arrow_nautical(
+            fill = c("grey40", "white"),
+            line_col = "grey20",
+            text_family = "Proxima Head",
+            text_size = 4
+        )
+    ) +
+    theme(
+        legend.position = c(0.82, 0.3),
+        legend.key.size = unit(1, units = "cm"),
+        legend.text = element_text(family = "Proxima Head", size = 10),
+        legend.margin = margin(t = 0, r = 10, b = 0, l = 0),
+        plot.margin = margin(t = 10, r = 10, b = -30, l = 10, unit = "pt"),
+        plot.title = element_text(family = "Proxima Head", face = "bold", size = 8),
+        plot.subtitle = element_text(family = "Proxima", size = 10)
+    ) +
+    ggtitle("Geographic Distribution of Surveillance Companies Across China")
+```
+
+```{r}
+#| echo: false
+#| out-width: 100%
+#| fig-height: 8
+#| fig-width: 10
+readr::read_rds("E:/OneDrive - HKUST Connect/personal website/main/visualization/data/surveillance.Rds")
+```
+
+<br>
+<br>
+
+# Propaganda During the Shanghai Lockdown
+
+The street-level distribution of propaganda which is based on approximately 90,000 WeChat posts from grassroots governments during the Shanghai lockdown
+
+```{r}
+#| eval: false
+#------------------------------------------------------------------------------
+country <- read_rds("E:\\OneDrive - HKUST Connect\\dataverse\\shpfile\\阿里全国地图.Rds") %>%
+    filter(name != "") %>%
+    st_transform(crs = "+proj=aea +lat_1=25 +lat_2=47 +lat_0=0 +lon_0=105 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs")
+
+target_province <- filter(country, name == "上海市")
+
+target_bbox <- st_bbox(target_province)
+
+X_expand <- (target_bbox$xmax - target_bbox$xmin) * 0.3
+Y_expand <- (target_bbox$ymax - target_bbox$ymin) * 0.3
+
+target_bbox_expanded <- target_bbox + c(-X_expand, -Y_expand, X_expand, Y_expand)
+
+target_expanded <- st_as_sfc(st_bbox(target_bbox_expanded), crs = st_crs(target_province))
+
+neighbors <- country %>%
+    filter(st_intersects(st_geometry(.), target_expanded, sparse = FALSE) |> map_lgl(1, any))
+
+with_neighbors <- st_crop(neighbors, target_expanded)
+
+# ------------------------------------------------------------------------------
+china <- st_read("E:\\OneDrive - HKUST Connect\\dataverse\\shpfile\\1.2\\国界\\国家矢量.shp")
+
+world <- ne_countries(scale = "medium", returnclass = "sf") %>%
+    st_transform("+proj=aea +lat_1=25 +lat_2=47 +lat_0=0 +lon_0=105 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs")
+
+lon_min <- 82
+lon_max <- 126
+lat_min <- 0
+lat_max <- 55
+
+bbox <- st_bbox(c(xmin = lon_min, xmax = lon_max, ymin = lat_min, ymax = lat_max), crs = st_crs(4326))
+
+sp_bbox <- bbox %>%
+    st_as_sfc() %>%
+    st_as_sf()
+
+bounds_proj <- st_transform(sp_bbox, "+proj=aea +lat_1=25 +lat_2=47 +lat_0=0 +lon_0=105 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs")
+
+xmin <- min(st_coordinates(bounds_proj)[, 1])
+xmax <- max(st_coordinates(bounds_proj)[, 1])
+ymin <- min(st_coordinates(bounds_proj)[, 2])
+ymax <- max(st_coordinates(bounds_proj)[, 2])
+
+base_map <- ggplot() +
+    geom_sf(
+        data = world,
+        linetype = "solid",
+        colour = "#FFFFFF",
+        linewidth = 0.4
+    ) +
+    geom_sf(
+        data = country,
+        linetype = "solid",
+        colour = "#8d96a3",
+        linewidth = 0.7
+    ) +
+    geom_sf(
+        data = target_province,
+        fill = "#edae49"
+    ) +
+    geom_sf(
+        data = target_expanded, fill = NA, color = "#d1495b",
+        linetype = "solid",
+        linewidth = 0.7
+    ) +
+    coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+    ggthemes::theme_map() +
+    scale_fill_viridis(
+        option = "magma",
+        name = "Number \n of posts",
+        alpha = 0.8,
+        begin = 0,
+        end = 0.9,
+        direction = -1, # dark is lowest, yellow is highest
+        guide = guide_legend(
+            keyheight = unit(5, units = "mm"),
+            title.position = "top",
+            reverse = TRUE,
+            title.theme = element_text(family = "Proxima Head")
+        )
+    ) +
+    annotation_scale(
+    location = "tl",
+    bar_cols = c("grey60", "white"),
+    text_family = "Proxima Head"
+  ) +
+  theme(
+    panel.background = element_rect(fill = "lightblue"),
+    legend.position = "right",
+    legend.key.size = unit(10, units = "mm"),
+    legend.text = element_text(family = "Proxima Head"),
+    legend.margin = margin(t = 0, r = 10, b = 0, l = 0)
+  )
+
+# ------------------------------------------------------------------------------
+ggplot() +
+    geom_sf(data = with_neighbors) +
+    geom_sf(data = st_transform(post_map, "+proj=aea +lat_1=25 +lat_2=47 +lat_0=0 +lon_0=105 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"), aes(fill = count), linewidth = 0.4, size = 0.1) +
+    geom_sf(
+        data = shanghai_district,
+        aes(geometry = geometry),
+        alpha = 0,
+        linetype = "solid",
+        colour = "#FFFFFF",
+        linewidth = 0.7
+    ) +
+    ggthemes::theme_map() +
+    scale_fill_viridis(
+        option = "magma",
+        name = "Number \n of posts",
+        alpha = 0.8,
+        begin = 0,
+        end = 0.9,
+        direction = -1, # dark is lowest, yellow is highest
+        guide = guide_legend(
+            keyheight = unit(5, units = "mm"),
+            title.position = "top",
+            reverse = TRUE,
+            title.theme = element_text(family = "Proxima Head")
+        )
+    ) +
+    annotation_scale(
+        location = "tl",
+        bar_cols = c("grey60", "white"),
+        text_family = "Proxima Head"
+    ) +
+    annotation_north_arrow(
+        location = "tl",
+        which_north = "true",
+        pad_x = unit(0.1, "in"),
+        pad_y = unit(1.0, "in"),
+        style = ggspatial::north_arrow_nautical(
+            fill = c("grey40", "white"),
+            line_col = "grey20",
+            text_family = "Proxima Head"
+        )
+    ) +
+    theme(
+        legend.position = "right",
+        legend.key.size = unit(10, units = "mm"),
+        legend.text = element_text(family = "Proxima Head"),
+        legend.margin = margin(t = 0, r = 10, b = 0, l = 0)
+    )
+```
+
+```{r}
+#| echo: false
+#| out-width: 100%
+#| fig-height: 9.9
+#| fig-width: 18
+require(pacman)
+p_load(readr, patchwork)
+
+shanghai <- read_rds("E:\\OneDrive - HKUST Connect\\Phd\\图片和pdf/post_map.Rds")
+China <- read_rds("E:/OneDrive - HKUST Connect/personal website/main/visualization/data/base_map.Rds")
+
+China + shanghai + plot_layout(ncol = 2)
+```
+
+```{r}
+#| eval: false
+#| echo: false
+p_load(terra)
+night_light <- rast("E:\\OneDrive - HKUST Connect\\dataverse\\第三方数据\\夜间灯光\\DMSP-like2022.tif") %>% 
+    aggregate(fact = 5)
+
+crop(night_light, country)
+
+night <- ggplot() +
+  geom_tile(data = tibble(as.data.frame(raster_masked, xy = TRUE, na.rm = TRUE)), aes(x = x, y = y, fill =  `DMSP-like2022`)) +
+  coord_equal() +
+  scale_fill_viridis_c() +
+  geom_sf(data = china, fill = NA, color = "#FFFFFF") +
+  ggthemes::theme_map()
+
+write_rds(night, "data/night.Rds")
+
+getwd()
+
+china <- china %>%
+    st_transform(crs(night_light))
+china <- country %>%
+    st_transform(crs(night_light))
+
+cropped_raster <- crop(night_light, china)
+
+raster_masked <- mask(cropped_raster, china)
+
+# raster_polygons <- rasterToPolygons(cropped_raster, na.rm = TRUE)
+
+stars_obj <- stars::st_as_stars(cropped_raster)
+
+province <- st_read("E:\\OneDrive - HKUST Connect\\dataverse\\shpfile\\1.2\\2023年省级\\2023年省级.shp")
+
+night <- ggplot() +
+  geom_stars(data = stars_obj) +
+  geom_sf(data = province, fill = NA, color = "#FFFFFF") +
+  scale_fill_viridis_c() +
+  ggthemes::theme_map()
+
+library(terra)
+
+# 将RasterLayer转换为SpatRaster
+rast <- rast(cropped_raster)
+# 转换为矢量（等效于rasterToPolygons）
+vect <- as.polygons(rast)
+
+# 现在vect是一个SpatVector对象，您可以将它转换为sf对象
+sf_polygons <- st_as_sf(vect)
+
+# 使用ggplot2绘制sf对象
+ggplot() +
+  geom_sf(data=sf_polygons) +
+  scale_fill_viridis_c() +
+  theme_minimal() +
+  coord_sf()
+```
+
+```{r}
+#| echo: false
+#| eval: false
+require(pacman)
+p_load(showtext, ggspatial, viridis, scales, tidyverse, sf, rnaturalearthdata, rnaturalearth, patchwork, ggsflabel)
+
+font_add("Proxima", "E:\\OneDrive - HKUST Connect\\dataverse\\可视化\\Proxima Nova Extrabold.ttf")
+font_add("Proxima Head", "E:\\OneDrive - HKUST Connect\\dataverse\\可视化\\Publico Headline Web Bold.ttf")
+
+albers_proj <- "+proj=aea +lat_1=25 +lat_2=47 +lat_0=0 +lon_0=105 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs" %>%
+    st_crs()
+
+jilin_albers_proj_string <- "+proj=tmerc +lat_0=0 +lon_0=123 +k=1 +x_0=500000 +y_0=0 +ellps=krass +units=m +no_defs" %>%
+    st_crs()
+
+country <- st_read("E:\\OneDrive - HKUST Connect\\dataverse\\shpfile\\1.2\\国界\\国家矢量.shp")
+province <- st_read("E:\\OneDrive - HKUST Connect\\dataverse\\shpfile\\1.2\\2023年省级\\2023年省级.shp")
+city <- st_read("E:\\OneDrive - HKUST Connect\\dataverse\\shpfile\\1.2\\2023年地级/2023年地级.shp")
+
+jilin <- province %>%
+    filter(省 == "上海市") %>%
+    st_transform(albers_proj)
+
+jilin <- province %>%
+    filter(省 == "上海市") %>%
+    st_transform(crs = "+proj=utm +zone=51 +north +datum=WGS84")
+
+jilin_bbox <- st_bbox(jilin)
+
+X_expand <- (jilin_bbox$xmax - jilin_bbox$xmin) * 0.1
+Y_expand <- (jilin_bbox$ymax - jilin_bbox$ymin) * 0.1
+
+jilin_bbox_expanded <- jilin_bbox + c(-X_expand, -Y_expand, X_expand, Y_expand)
+
+jilin_expanded <- st_as_sfc(st_bbox(jilin_bbox_expanded), crs = st_crs(jilin))
+
+neighbors <- province %>%
+    st_transform(crs = st_crs(jilin_expanded)) %>%
+    filter(st_intersects(st_geometry(.), jilin_expanded, sparse = FALSE) |> map_lgl(1, any))
+
+base_jilin <- st_crop(neighbors, jilin_expanded)
+
+jilin_city <- city %>%
+    filter(省级 == "吉林省") %>%
+    st_transform(albers_proj)
+
+jilin_with_neighbors <- ggplot() +
+    geom_sf(data = province)
+    geom_sf(data = base_jilin, fill = "white", color = "black") +
+    geom_sf(data = jilin_city) +
+     geom_sf_label_repel(
+        data = jilin_city,
+        aes(label = ENG_NAME),
+        family = "Proxima",
+        #fontface = "bold",
+        colour = "#FFFFFF",
+        fill = "#555665",
+        size = 2
+    ) +
+    theme_void()
+
+world <- ne_countries(scale = "medium", returnclass = "sf") %>%
+    st_transform(albers_proj)
+
+bounds_proj <- st_transform(sp_bbox, albers_proj)
+
+china <- ggplot() +
+    geom_sf(data = world, fill = "white", color = "black") +
+    geom_sf(
+        data = st_transform(country, albers_proj)
+    ) +
+    geom_sf(data = st_transform(province, albers_proj)) +
+    geom_sf(data = jilin, fill = "red") +
+    geom_sf(data = jilin_expanded, fill = NA, color = "green") +
+    ggthemes::theme_map() +
+    coord_sf(xlim = c(xmin, xmax), ylim = c(ymin, ymax), expand = FALSE) +
+    theme(panel.background = element_rect(fill = "lightblue"))
+    
+
+final <- china + jilin_with_neighbors + plot_layout(ncol = 2)
+
+ggsave("test.pdf", final, dpi = 300)
+```
+
+
+## Pocket Crimes
+
+"Pocket crimes" is broadly defined and ambiguously worded that authorities can apply it to almost any activity they deem undesirable. Draw on my [policing data](https://xinzhuo.work/data/penality/), I found that detentions under the pretext of "picking quarrels and provoking trouble" are becoming increasingly severe.
+
+```{r}
+#| eval: false
+ggplot(data_plot) +
+    geom_point(aes(date, mean, color = group), shape = 19, size = 3) +
+    geom_line(aes(date, mean, color = group), size = 1) +
+    scale_x_date(date_breaks = "6 month", date_labels = "%Y-%m") +
+    geom_rect(
+        data = tibble(
+            xmin = as.Date(c("2018-05-1")),
+            xmax = as.Date(c("2019-11-15")),
+            ymin = -Inf,
+            ymax = Inf
+        ),
+        aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+        fill = "grey", alpha = 0.3
+    ) +
+    scale_color_manual(
+        values = colors[c(1, 2)]
+    ) +
+    xlab("") +
+    ylab("Average Detention Time (in days)") +
+    ggthemes::theme_hc(base_size = 15) +
+    guides(
+        # color = guide_legend(title = "")
+    ) +
+    geom_hline(yintercept = 4.3, linetype = "longdash", color = "#555555", size = 1) +
+    geom_label(
+        data = tibble(date = ymd("2020-02-01"), mean = 3.87, label = "Average detention length \nfor all charges is 4.3 days"),
+        aes(date, mean, label = label),
+        family = "Proxima",
+        hjust = 0,
+        vjust = 0.5,
+        lineheight = 0.8,
+        colour = "#555555",
+        fill = "white",
+        label.size = NA,
+        size = 4
+    ) +
+    geom_label(
+        data = tibble(date = ymd("2018-06-01"), mean = 7.8, label = "Prior to the \nCOVID-19 pandemic"),
+        aes(date, mean, label = label),
+        family = "Proxima",
+        hjust = 0,
+        vjust = 0.5,
+        lineheight = 0.8,
+        colour = "#555555",
+        fill = NA,
+        alpha = 0.3,
+        label.size = NA,
+        size = 6
+    ) +
+    geom_curve(
+        aes(x = ymd("2020-12-01"), xend = ymd("2021-01-14"), y = 4, yend = 4.3),
+        colour = "#555555",
+        size = 0.5,
+        curvature = -0.2,
+        arrow = arrow(length = unit(0.03, "npc"))
+    ) +
+    geom_label(
+        aes(x = ymd("2021-02-01"), y = 7.2, label = "Picking Quarrels and Provoking Trouble"),
+        family = "Proxima",
+        hjust = 0,
+        vjust = 0.5,
+        lineheight = 0.8,
+        colour = "#edae49",
+        fill = "white",
+        alpha = 0.3,
+        label.size = NA,
+        size = 6
+    ) +
+    geom_label(
+        aes(x = ymd("2021-02-01"), y = 5.5, label = "Disrupt Order in a Public Place"),
+        family = "Proxima",
+        hjust = 0,
+        vjust = 0.5,
+        lineheight = 0.8,
+        colour = "#1380A1",
+        fill = "white",
+        alpha = 0.3,
+        label.size = NA,
+        size = 6
+    ) +
+    theme(
+        legend.position = "none",
+        axis.text = element_text(
+            family = "Proxima Head",
+            color = "#555665",
+            size = 15
+        ),
+        axis.title.y = element_text(
+            family = "Proxima Head",
+        ),
+        legend.text = element_text(family = "Proxima Head")
+    )
+```
+
+![](png/detention.png)
+
+<br>
+<br>
+
+```{r}
+#| echo: false
+#| eval: false
+require("pacman")
+p_load(palmerpenguins, tidyverse, reactablefmtr, BiocManager, dataui, htmltools, reactable, jsonlite, anomalize, tippy, plotly)
+
+theme <- reactableTheme(
+    headerStyle = list(
+      "&:hover[aria-sort]" = list(background = "hsl(0, 0%, 96%)"),
+      "&[aria-sort='ascending'], &[aria-sort='descending']" = list(background = "hsl(0, 0%, 96%)"),
+      borderColor = "#555"
+  )
+)
+```
+
+<br>
+
+## Trending Topics
+We have recorded every minute of hotness data for over 400,000 hot searches appearing on China's Weibo (akin to Twitter) trending list (100 million data points). Let's take a look at how does an authoritarian government react when news unfavorable to it appears on trending lists.
+
+```{r}
+#| eval: false
+data <- read_rds("E:\\OneDrive - HKUST Connect\\weibohot\\河南_乌鲁木齐.Rds") %>%
+    mutate(`start time` = as.POSIXct(start_time, origin = "1970-01-01") |> format("%Y-%m-%d %H:%M:%S")) %>%
+    unnest(trend) %>%
+    group_nest(title, `trending score`, `start time`, file) %>%
+    mutate(
+        data = map(data, ~ arrange(., time)),
+        trend = map(data, ~ pull(., star))
+    ) %>%
+    select(-data) %>%
+    arrange(-`trending score`) %>%
+    mutate(
+        users = map(file, ~ pluck(., 1) |>
+            fromJSON() |>
+            pluck("data", "media_info", "users")),
+        users = map(users, ~ select(., name, location, verified))
+    )
+
+users <- data %>%
+    select(users, title) %>%
+    unnest()
+
+reactable(
+    select(data, -file, -users),
+    searchable = TRUE,
+    theme = nytimes(),
+    columns = list(
+        title = colDef(maxWidth = 90, vAlign = "center"),
+        `trending score` = colDef(maxWidth = 80, vAlign = "center"),
+        `start time` = colDef(maxWidth = 120, vAlign = "center"),
+        trend = colDef(
+            minWidth = 150,
+            cell = react_sparkline(
+                data,
+                labels = c("max"),
+                highlight_points = highlight_points(max = "red"),
+                height = 80,
+                statline = "mean",
+                tooltip_type = 2
+            )
+        )
+    ),
+    details = colDef(
+        name = "top media",
+        minWidth = 80,
+        details = function(index) {
+            users <- users[users$title == data$title[index], ]
+
+            htmltools::div(
+                style = "padding: 1rem",
+                reactable(users, outlined = TRUE)
+            )
+        }
+    )
+)
+```
+
+```{r}
+#| echo: false
+read_rds("E:/OneDrive - HKUST Connect/personal website/main/visualization/data/table_weibo.Rds")
+```
+<br>
+<br>
+
+## Divided World
+Perceptions of the United States and China in value surveys. Data comes from a [report by Centre for the Future of Democracy](https://www.bennettinstitute.cam.ac.uk/publications/a-world-divided/).
+
+```{r}
+#| eval: false
+survey_crack <- ggplot(
+    data_2,
+    aes(
+        `pro China`,
+        `pro USA`, ,
+        color = label,
+        size = frequency,
+        label = country_name
+    )
+) +
+    geom_point(
+        alpha = 0.64, stroke = 2
+    ) +
+    scale_color_manual(values = c("#d1495b", "#5f9ea0"), labels = c("Positive View of China", "Positive View of the United States")) +
+    scale_size_continuous(range = c(2, 49)) +
+    geom_abline(slope = 1, intercept = 0, size = 1.6, linetype = "dashed", colour = "#ffffff") +
+    geom_text_repel(
+        color = "#333333",
+        box.padding = unit(1, "lines"),
+        segment.size = 0.25,
+        size = 15,
+        family = "techmono"
+    ) +
+    theme_minimal() +
+    scale_y_continuous(position = "right") +
+    theme(
+        text = element_text(family = "heebo"),
+        legend.position = "bottom",
+        plot.margin = margin(t = 0, r = 5, b = 8, l = 0, unit = "pt"),
+        plot.background = element_rect(fill = "#E0E0E0", color = NA),
+        axis.title = element_blank(),
+        axis.text = element_text(size = 20, color = "#555665", family = "Proxima Head"),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 25, color = "#555665", family = "Proxima Head"),
+        legend.justification = c("center")
+    ) +
+    guides(
+        size = "none",
+        guide_legend(title = "none"),
+        color = guide_legend(reverse = TRUE, nrow = 2)
+    )
+
+survey_crack <- ggdraw() +
+    draw_plot(survey_crack) +
+    draw_image("china_us_30.png", x = 0.11, y = -0.25, width = 0.4, scale = 0.89)
+```
+
+![](png/survey_crack_tets.png)
+
+```{r}
+#| eval: false
+ggplot(
+    worldtilegrid,
+    aes(xmin = x, ymin = y, xmax = x + 1, ymax = y + 1, fill = label)
+) +
+    geom_rect(color = "#ffffff", size = 0.1) +
+    geom_text(
+        aes(x = x, y = y, label = alpha.3),
+        color = "#555665",
+        nudge_x = 0.5,
+        nudge_y = -0.5,
+        size = 10,
+        family = "Proxima Head",
+        filter(worldtilegrid, label == "pro china")
+    ) +
+    geom_rect_pattern(
+        data = filter(worldtilegrid, alpha.3 == "CHN"),
+        pattern_filename = "https://upload.wikimedia.org/wikipedia/commons/f/fa/Flag_of_the_People%27s_Republic_of_China.svg",
+        pattern = "image",
+        pattern_type = "squish"
+    ) +
+    geom_rect_pattern(
+        data = filter(worldtilegrid, alpha.3 == "USA"),
+        pattern_filename = "https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Flag_of_the_United_States.svg/1920px-Flag_of_the_United_States.svg.png",
+        pattern = "image",
+        pattern_type = "squish"
+    ) +
+    geom_text(
+        aes(x = x, y = y, label = alpha.3),
+        color = "#E0E0E0",
+        nudge_x = 0.5,
+        nudge_y = -0.5,
+        size = 10,
+        family = "Proxima Head",
+        filter(worldtilegrid, label == "not pro china" & alpha.3 != "USA")
+    ) +
+    geom_rect_pattern(
+        data = filter(worldtilegrid, is.na(label)),
+        fill = "#ffffff",
+        colour = "#a9a9a9",
+        pattern_density = 0.45,
+        pattern_fill = "#a9a9a9",
+        pattern_colour = "#ffffff"
+    ) +
+    scale_y_reverse() +
+    theme_minimal() +
+    theme(
+        panel.grid = element_blank(),
+        axis.text = element_blank(),
+        axis.title = element_blank(),
+        legend.position = "none",
+        legend.text = element_text(family = "Proxima Head"),
+        legend.title = element_blank(),
+        legend.key.width = unit(0.5, "cm"),
+        plot.background = element_rect(fill = "#E0E0E0", color = NA)
+    ) +
+    scale_fill_manual(values = c("#2e4057", "#edae49"), labels = c("not pro China", "pro China")) +
+    annotate("text",
+        x = 6, y = c(19, 20, 21),
+        label = c("pro China", "not pro China", "not included"),
+        size = 12, hjust = 0,
+        family = "Proxima", color = c("#edae49", "#2e4057", "#a9a9a9")
+    ) +
+    annotate("point", x = 5.7, y = c(19.05, 20.05, 21.05), pch = c(15, 15, 15), size = 4, color = c("#edae49", "#2e4057", "#a9a9a9"))
+```
+
+![](png/survey_index_revised.png)
